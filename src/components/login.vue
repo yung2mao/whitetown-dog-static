@@ -8,27 +8,27 @@
             <div class="form_box layui-form">
                 <div class="layui-form-item">
                     <label class="username_white_town layui-icon layui-icon-username" for="login-username"></label>
-                    <input type="text" name="username" id="login-username" lay-verify="required" placeholder="请输入用户名" class="layui-input">
+                    <input type="text" id="login-username" lay-verify="required" placeholder="请输入用户名" class="layui-input" v-model="username">
                 </div>
                 <div class="layui-form-item">
                     <label class="username_white_town layui-icon layui-icon-password" for="login-password"></label>
-                    <input type="text" name="upassword" id="login-password" lay-verify="required" placeholder="请输入密码" class="layui-input">
+                    <input type="password" id="login-password" lay-verify="required" placeholder="请输入密码" class="layui-input" v-model="password">
                 </div>
                 <div class="layui-form-item">
                     <div class="layui-row">
                         <div class="layui-col-xs7">
                             <label class="username_white_town layui-icon layui-icon-vercode" for="login-vercode"></label>
-                            <input type="text" name="vercode" id="login-vercode" lay-verify="required" placeholder="请输入验证码" class="layui-input">
+                            <input type="text" id="login-vercode" lay-verify="required" placeholder="请输入验证码" class="layui-input" v-model="captcha">
                         </div>
                         <div class="layui-col-xs5">
                             <div style="margin-left: 10px;">
-                                <img src="/erus/ver"  class="login_vercode" id="vercode">
+                                <img v-bind:src="verUrl"  class="login_vercode" id="vercode" @click="refreshCaptcha()">
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="layui-form-item">
-                    <button class="layui-btn layui-btn-fluid" lay-submit lay-filter="ogin-submit">登 录</button>
+                    <button class="layui-btn layui-btn-fluid" lay-submit lay-filter="ogin-submit" @click="login()">登 录</button>
                 </div>
             </div>
             <div class="login_image layui-trans">
@@ -55,7 +55,34 @@
 </template>
 
 <script>
-export default {}
+export default {
+  name: 'loginForm',
+  data () {
+    return {
+      username: 'admin',
+      password: '123456',
+      captcha: '',
+      verUrl: "http://127.0.0.1:10003/erus/ver"
+    }
+  },
+  methods: {
+    login () {
+      var username = this.username
+      var password = this.password
+      var captcha = this.captcha
+      this.$http.post('erus/login',
+        { "username": username,
+        "password": password,
+        "captcha": captcha 
+        })
+    },
+    refreshCaptcha () {
+        var rand = Math.random()
+        this.verUrl = "http://127.0.0.1:10003/erus/ver?"+rand
+        return;
+    }
+  }
+}
 </script>
 
 <style lang="less" scoped>
