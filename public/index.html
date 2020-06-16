@@ -7,7 +7,14 @@
     <link rel="icon" href="<%= BASE_URL %>favicon.ico">
     <link rel="stylesheet" type="text/css" href="./layui/css/layui.css">
     <script type="text/javascript" src="./layui/layui.js"></script>
-   
+    <script>
+      layui.use("form",function(){
+        var form = layui.form;
+      });
+      layui.use('layer',function () {
+        var layer = layui.layer
+      })
+    </script>
     <title><%= htmlWebpackPlugin.options.title %></title>
   </head>
   <body>
@@ -16,10 +23,5 @@
     </noscript>
     <div id="app"></div>
     <!-- built files will be auto injected -->
-    <script>
-      layui.use("form",function(){
-        var form = layui.form;
-      });
-    </script>
   </body>
 </html>
