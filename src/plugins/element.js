@@ -1,10 +1,17 @@
 import Vue from 'vue'
 // eslint-disable-next-line import/no-duplicates
-import { Button } from 'element-ui'
-// eslint-disable-next-line no-unused-vars,import/no-duplicates
-import { Message } from 'element-ui'
-import { MessageBox } from 'element-ui';
+import { Button,Message,Container,Header,Aside,Main,Menu,Submenu,MenuItemGroup,MenuItem,Radio,RadioGroup,RadioButton } from 'element-ui'
 
 Vue.use(Button)
+Vue.use(Container)
+Vue.use(Header)
+Vue.use(Aside)
+Vue.use(Main)
+Vue.use(Menu)
+Vue.use(Submenu)
+Vue.use(MenuItemGroup)
+Vue.use(MenuItem)
+Vue.use(Radio)
+Vue.use(RadioGroup)
+Vue.use(RadioButton)
 Vue.prototype.$message = Message
-Vue.prototype.$messageBox = MessageBox

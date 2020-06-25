@@ -7,6 +7,7 @@ import MessageBox from 'element-ui/packages/message-box/src/main'
 Vue.use(VueRouter)
 
 const routes = [
+  { path: '/', redirect: '/dog' },
   { path: '/login', component: login },
   { path: '/dog', component: dog }
 ]
