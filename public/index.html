@@ -8,12 +8,10 @@
     <link rel="stylesheet" type="text/css" href="./layui/css/layui.css">
     <script type="text/javascript" src="./layui/layui.js"></script>
     <script>
-      layui.use("form",function(){
+      layui.use(['form','layer'],function () {
         var form = layui.form;
+        var layer = layui.layer;
       });
-      layui.use('layer',function () {
-        var layer = layui.layer
-      })
     </script>
     <title><%= htmlWebpackPlugin.options.title %></title>
   </head>

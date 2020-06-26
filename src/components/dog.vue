@@ -6,10 +6,8 @@
       </div>
       <div>
         <el-menu
-          :default-active="activeIndex2"
           class="el-menu-demo"
           mode="horizontal"
-          @select="handleSelect"
           background-color="#2D3F57"
           text-color="#fff"
           active-text-color="#ffd04b">
@@ -32,7 +30,9 @@
           background-color="#2D3F57"
           text-color="#fff"
           active-text-color="#ffd04b" :collapse="isCollapse"
-          :collapse-transition="false">
+          :collapse-transition="false"
+          router
+          :default-active="activePath">
           <div class="menu-control-button">
 
             <i :class="menuControlIcon"
@@ -45,16 +45,18 @@
               <i :class="'layui-icon '+item.menuIcon" style="color: rgba(206,209,245,0.84);padding-right: 20px"></i>
               <span>{{item.menuName}}</span>
             </template>
-            <el-menu-item :index="subItem.menuId"
+            <el-menu-item :index="subItem.menuUrl"
                           :key="subItem.menuId" v-for="subItem in item.children"
-                          style="padding-left: 60px">
+                          style="padding-left: 60px" @click="saveStatus(subItem.menuUrl)">
               {{subItem.menuName}}
             </el-menu-item>
           </el-submenu>
         </el-menu>
       </el-aside>
       <el-container>
-        <el-main>Main</el-main>
+        <el-main>
+          <router-view></router-view>
+        </el-main>
       </el-container>
     </el-container>
   </el-container>
@@ -67,11 +69,13 @@
       return {
         isCollapse: false,
         menuControlIcon: 'layui-icon layui-icon-shrink-right',
-        menuList: []
+        menuList: [],
+        activePath: ''
       }
     },
     created () {
       this.getMenuList('top', 2)
+      this.activePath = window.sessionStorage.getItem('activePath')
     },
     methods: {
       //退出
@@ -109,6 +113,11 @@
         }else {
           this.isCollapse = false
         }
+      },
+      //保存激活状态下path
+      saveStatus(activePath) {
+        window.sessionStorage.setItem("activePath",activePath)
+        this.activePath = activePath
       }
     }
   }
