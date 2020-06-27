@@ -31,7 +31,7 @@
         <el-col :span="6">
           <div class="layui-btn-group">
             <button type="button" class="layui-btn" @click="normalSearchUser()">搜索</button>
-            <button type="button" class="layui-btn">添加</button>
+            <button type="button" class="layui-btn" @click="addUserDialog = true">添加</button>
             <button type="button" class="layui-btn">导出</button>
           </div>
         </el-col>
@@ -100,7 +100,7 @@
           width="250">
           <template slot-scope="scope">
             <button type="button" class="layui-btn layui-btn-xs layui-btn-radius layui-btn-primary"
-                    @click="updateUser(scope.row.username)">编辑
+                    @click="updateUserDialogOpen(scope.row)">编辑
             </button>
             <button type="button" class="layui-btn layui-btn-xs layui-btn-radius layui-btn-danger"
                     @click="deleteUser(scope.row)">删除
@@ -125,6 +125,71 @@
         :total="this.userTotal">
       </el-pagination>
     </el-card>
+    <el-dialog
+      title="添加用户"
+      :visible.sync="addUserDialog"
+      width="30%"
+      center
+      @close="addUserDialogReset">
+      <el-form :model="addUserInfo" :rules="addUserInfoRules" ref="addUserInfoRef" label-width="70px"
+               class="demo-ruleForm">
+        <el-form-item label="用户名: " prop="username">
+          <el-input v-model="addUserInfo.username"></el-input>
+        </el-form-item>
+        <el-form-item label="密 码: " prop="password">
+          <el-input v-model="addUserInfo.password" type="password"></el-input>
+        </el-form-item>
+      </el-form>
+      <span slot="footer" class="dialog-footer">
+        <el-button type="primary" @click="addUser()">确 定</el-button>
+        <el-button @click="addUserDialog = false">取 消</el-button>
+      </span>
+    </el-dialog>
+    <!--    完善编辑用户信息弹窗-->
+    <el-dialog
+      title="编辑用户"
+      :visible.sync="updateUserDialog"
+      width="30%"
+      center
+      @close="updateUserDialogReset()">
+      <el-form :model="updateUserInfo" :rules="updateUserInfoRules" ref="updateUserInfoRef" label-width="70px"
+               size="small">
+        <el-form-item label="用户名: ">
+          <el-input v-model="updateUserInfo.username" disabled></el-input>
+        </el-form-item>
+        <el-form-item label="姓 名: " prop="realName">
+          <el-input v-model="updateUserInfo.realName"></el-input>
+        </el-form-item>
+        <el-form-item label="性 别: ">
+          <el-radio-group v-model="updateUserInfo.gender">
+            <el-radio label="男">
+              <i class="layui-icon layui-icon-male" style="color: #2F4056;margin-right: 5px"></i>男
+            </el-radio>
+            <el-radio label="女">
+              <i class="layui-icon layui-icon-female" style="color: #2F4056;margin-right: 5px"></i>女
+            </el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="生 日: ">
+          <el-date-picker
+            type="date"
+            placeholder="请选择出生日期"
+            v-model="updateUserInfo.birthday"
+            :value-format="'yyyy-MM-dd'"
+            style="width: 100%;"></el-date-picker>
+        </el-form-item>
+        <el-form-item label="手机号: " prop="telephone">
+          <el-input v-model="updateUserInfo.telephone"></el-input>
+        </el-form-item>
+        <el-form-item label="邮箱: " prop="email">
+          <el-input v-model="updateUserInfo.email"></el-input>
+        </el-form-item>
+      </el-form>
+      <span slot="footer" class="dialog-footer">
+        <el-button type="primary" @click="updateUser()">确 定</el-button>
+        <el-button @click="updateUserDialog = false">取 消</el-button>
+      </span>
+    </el-dialog>
   </div>
 </template>
 
@@ -132,40 +197,132 @@
   export default {
     name: 'user',
     data () {
+      //邮箱校验
+      var checkEmail = (rules, value, cb) => {
+        const regex = /^[a-z0-9]+([._\\\\-]*[a-z0-9])*@([a-z0-9]+[-a-z0-9]*[a-z0-9]+.){1,63}[a-z0-9]+$/
+        if (regex.test(value)) {
+          return cb()
+        } else {
+          cb(new Error('邮箱格式错误'))
+        }
+      }
+      //手机号校验
+      var checkTelephone = (rules, value, cb) => {
+        const regex = /^1(3|4|5|6|7|8|9)\d{9}$/
+        if (regex.test(value)) {
+          return cb()
+        }
+        cb(new Error('手机号格式错误'))
+      }
       return {
         searchDetail: '',
         timeScope: [],
         pickerOptions: {
           shortcuts: [{
             text: '最近一周',
-            onClick(picker) {
-              const end = new Date();
-              const start = new Date();
-              start.setTime(start.getTime() - 3600 * 1000 * 24 * 7);
-              picker.$emit('pick', [start, end]);
+            onClick (picker) {
+              const end = new Date()
+              const start = new Date()
+              start.setTime(start.getTime() - 3600 * 1000 * 24 * 7)
+              picker.$emit('pick', [start, end])
             }
           }, {
             text: '最近一个月',
-            onClick(picker) {
-              const end = new Date();
-              const start = new Date();
-              start.setTime(start.getTime() - 3600 * 1000 * 24 * 30);
-              picker.$emit('pick', [start, end]);
+            onClick (picker) {
+              const end = new Date()
+              const start = new Date()
+              start.setTime(start.getTime() - 3600 * 1000 * 24 * 30)
+              picker.$emit('pick', [start, end])
             }
           }, {
             text: '最近三个月',
-            onClick(picker) {
-              const end = new Date();
-              const start = new Date();
-              start.setTime(start.getTime() - 3600 * 1000 * 24 * 90);
-              picker.$emit('pick', [start, end]);
+            onClick (picker) {
+              const end = new Date()
+              const start = new Date()
+              start.setTime(start.getTime() - 3600 * 1000 * 24 * 90)
+              picker.$emit('pick', [start, end])
             }
           }]
         },
         userList: [],
         userTotal: 0,
         currentPage: 0,
-        pageSize: 0
+        pageSize: 0,
+        addUserDialog: false,
+        addUserInfo: {
+          username: '',
+          password: ''
+        },
+        addUserInfoRules: {
+          username: [
+            {
+              required: true,
+              message: '请输入用户名',
+              trigger: 'blur'
+            },
+            {
+              min: 3,
+              max: 20,
+              message: '用户名长度3-20',
+              trigger: 'blur'
+            }
+          ],
+          password: [
+            {
+              required: true,
+              message: '请输入密码',
+              trigger: 'blur'
+            },
+            {
+              min: 3,
+              max: 20,
+              message: '密码长度为6-20',
+              trigger: 'blur'
+            }
+          ]
+        },
+        updateUserDialog: false,
+        updateUserInfo: {
+          username: '',
+          realName: '',
+          gender: '男',
+          birthday: '',
+          telephone: '',
+          email: ''
+        },
+        updateUserInfoRules: {
+          realName: [
+            {
+              required: true,
+              message: '请输入姓名',
+              trigger: 'blur'
+            },
+            {
+              min: 1,
+              max: 20,
+              message: '姓名长度1-20',
+              trigger: 'blur'
+            }
+          ],
+          telephone: [
+            {
+              required: false
+            },
+            {
+              validator: checkTelephone,
+              trigger: 'blur'
+            }
+          ],
+          email: [
+            {
+              required: false
+            },
+            {
+              validator: checkEmail,
+              trigger: 'blur'
+            }
+          ]
+        }
       }
     },
     created () {
@@ -239,23 +396,20 @@
           })
         }
       },
-      //修改用户按钮单击触发
-      updateUser (username) {
-        console.log(username)
-      },
       //删除用户
       deleteUser (row) {
-        var that = this
-        layer.confirm('确认删除？', {
+        const that = this
+        layer.confirm('此操作不可恢复, 确认删除？', {
           title: false,
           closeBtn: 0,
           btn: ['确认', '取消']
           ,
-          yes: function (index, layero) {
-            that.userStatusUpdate({
+          yes: async function (index, layero) {
+            await that.userStatusUpdate({
               username: row.username,
               userStatus: 2
             })
+            await that.getUserList(that.currentPage, that.pageSize)
             layer.closeAll()
           },
           btn2: function (index) {
@@ -263,11 +417,110 @@
           }
         })
       },
+      //添加用户对话框关闭
+      addUserDialogReset () {
+        this.$refs.addUserInfoRef.resetFields()
+      },
+      addUser () {
+        this.$refs.addUserInfoRef.validate(valid => {
+          if (!valid) {
+            return
+          } else {
+            const that = this
+            this.$http.post('/user/registry', this.addUserInfo)
+              .then(function (result) {
+                const res = result.data
+                if (res.status == 200) {
+                  layer.msg('添加成功', {
+                    offset: '15px',
+                    icon: 1,
+                    time: 1000
+                  }, function () {
+                    that.addUserDialog = false
+                    that.getUserList(that.currentPage, that.pageSize)
+                  })
+                } else {
+                  layer.msg(res.statusName, {
+                    offset: '15px',
+                    icon: 5,
+                    time: 1000
+                  })
+                }
+              })
+          }
+        })
+      },
+      //修改用户对话框打开
+      updateUserDialogOpen (row) {
+        this.updateUserDialog = true
+        this.updateUserInfo = row
+      },
+      //修改用户弹窗关闭时调用
+      updateUserDialogReset () {
+        this.$refs.updateUserInfoRef.resetFields()
+      },
+      //修改用户按钮单击触发
+      updateUser () {
+        var that = this
+        this.$refs.updateUserInfoRef.validate(valid => {
+          if (!valid) {
+            return
+          }
+          this.$http.post('/user/update', this.updateUserInfo)
+            .then(function (result) {
+              const res = result.data
+              if (res.status != 200) {
+                layer.msg(res.statusName, {
+                  offset: '15px',
+                  icon: 5,
+                  time: 1000
+                })
+                return
+              } else {
+                layer.msg('更新成功', {
+                  offset: '15px',
+                  icon: 1,
+                  time: 1000
+                })
+                that.updateUserDialog = false
+                that.getUserList(that.currentPage,that.pageSize)
+              }
+            })
+        })
+      },
       roleUpdate (username) {
         console.log(username)
       },
       updatePwd (username) {
-        console.log(username)
+        const that = this
+        layer.confirm('用户密码将被重置，确认继续？', {
+          title: false,
+          closeBtn: 0,
+          btn: ['确认', '取消']
+          ,
+          yes: async function (index, layero) {
+            const {data:res} = await that.$http.get('/user/retryPwd', {
+              params: { username: username }
+            })
+            layer.closeAll()
+            if(res.status != 200){
+              layer.msg('操作失败', {
+                offset: '15px',
+                icon: 5,
+                time: 1000
+              })
+            }else {
+              layer.msg('操作成功', {
+                offset: '15px',
+                icon: 1,
+                time: 1000
+              })
+            }
+          },
+          btn2: function (index) {
+            layer.closeAll()
+          }
+        })
       },
       handleSizeChange (newSize) {
         this.getUserList(this.currentPage, newSize)
@@ -301,4 +554,5 @@
   .box-card {
     width: 480px;
   }
+
 </style>

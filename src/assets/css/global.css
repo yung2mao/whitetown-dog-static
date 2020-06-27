@@ -17,3 +17,10 @@ html, body, #app {
     font-size: 12px;
     margin-bottom: 10px;
 }
+.el-dialog__header{
+    background-color: #2D3F57;
+}
+.el-dialog__title{
+    color: rgba(248,249,247,0.84)!important;
+    font-family: "Microsoft YaHei", "微软雅黑", Arial, sans-serif!important;
+}

@@ -1,6 +1,8 @@
 import Vue from 'vue'
 // eslint-disable-next-line import/no-duplicates
 import {
+  Form,
+  FormItem,
   Button,
   Message,
   Container,
@@ -25,9 +27,12 @@ import {
   TableColumn,
   Switch,
   Pagination,
-  DatePicker
+  DatePicker,
+  Dialog
 } from 'element-ui'
 
+Vue.use(Form)
+Vue.use(FormItem)
 Vue.use(Button)
 Vue.use(Container)
 Vue.use(Header)
@@ -52,4 +57,5 @@ Vue.use(TableColumn)
 Vue.use(Switch)
 Vue.use(Pagination)
 Vue.use(DatePicker)
+Vue.use(Dialog)
 Vue.prototype.$message = Message

@@ -2,7 +2,7 @@
   <el-container class="home-container">
     <el-header>
       <div>
-        <h3 class="dog-title">DOG后台管理演示平台</h3>
+        <h3 class="dog-title"><i class="layui-icon layui-icon-key" style="color: #9F9F9F;margin-right: 5px"></i>DOG后台组件演示平台</h3>
       </div>
       <div>
         <el-menu
@@ -81,6 +81,7 @@
       //退出
       logOut () {
         window.localStorage.clear()
+        window.sessionStorage.clear()
         this.$router.push('/login')
       },
       //获取菜单列表
