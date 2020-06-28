@@ -499,7 +499,7 @@
           btn: ['确认', '取消']
           ,
           yes: async function (index, layero) {
-            const {data:res} = await that.$http.get('/user/retryPwd', {
+            const {data:res} = await that.$http.get('/user/reSetPwd', {
               params: { username: username }
             })
             layer.closeAll()
