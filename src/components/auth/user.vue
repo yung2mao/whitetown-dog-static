@@ -25,7 +25,7 @@
             end-placeholder="结束日期"
             :value-format="'yyyy-MM-dd HH:mm:ss'"
             :picker-options="pickerOptions"
-            style="width: 200px">
+            style="width: 240px">
           </el-date-picker>
         </el-col>
         <el-col :span="6">
@@ -50,41 +50,41 @@
         <el-table-column
           prop="username"
           label="用户名"
-          width="120">
+          width="100%">
         </el-table-column>
         <el-table-column
           prop="realName"
           label="姓名"
-          width="100">
+          width="100%">
         </el-table-column>
         <el-table-column
           prop="gender"
           label="性别"
-          width="100">
+          width="100%">
         </el-table-column>
         <el-table-column
           prop="birthday"
           label="出生日期"
-          width="120">
+          width="100%">
         </el-table-column>
         <el-table-column
           prop="createTime"
           label="创建时间"
-          width="160">
+          width="160%">
         </el-table-column>
         <el-table-column
           prop="telephone"
           label="手机号"
-          width="120">
+          width="120%">
         </el-table-column>
         <el-table-column
           prop="email"
           label="邮箱"
-          width="160">
+          width="190%">
         </el-table-column>
         <el-table-column
           label="用户状态"
-          width="120">
+          width="120%">
           <template slot-scope="scope">
             <el-switch
               v-model="scope.row.userStatus==0"
@@ -97,7 +97,7 @@
         <el-table-column
           fixed="right"
           label="操作"
-          width="250">
+          width="250%">
           <template slot-scope="scope">
             <button type="button" class="layui-btn layui-btn-xs layui-btn-radius layui-btn-primary"
                     @click="updateUserDialogOpen(scope.row)">编辑
@@ -405,12 +405,23 @@
           btn: ['确认', '取消']
           ,
           yes: async function (index, layero) {
-            await that.userStatusUpdate({
-              username: row.username,
-              userStatus: 2
-            })
-            await that.getUserList(that.currentPage, that.pageSize)
-            layer.closeAll()
+              const {data: res} = await that.$http.get('/user/active', {
+                  params: {
+                      username: row.username,
+                      userStatus: 2
+                  }
+              })
+              if (res.status == 200) {
+                  await that.getUserList(that.currentPage, that.pageSize)
+                  await layer.closeAll()
+              } else {
+                  layer.closeAll()
+                  layer.msg(res.statusName, {
+                      offset: '15px',
+                      icon: 5,
+                      time: 1000
+                  })
+              }
           },
           btn2: function (index) {
             layer.closeAll()

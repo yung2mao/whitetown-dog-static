@@ -2,7 +2,8 @@
   <el-container class="home-container">
     <el-header>
       <div>
-        <h3 class="dog-title"><i class="layui-icon layui-icon-key" style="color: #9F9F9F;margin-right: 5px"></i>DOG后台组件演示平台</h3>
+        <h3 class="dog-title"><i class="layui-icon layui-icon-key" style="color: #9F9F9F;margin-right: 5px"></i>DOG后台组件演示平台
+        </h3>
       </div>
       <div>
         <el-menu
@@ -13,7 +14,7 @@
           active-text-color="#ffd04b">
           <el-menu-item index="1">处理中心</el-menu-item>
           <el-submenu index="2">
-            <template slot="title"><img src="../assets/githubblue.png" width="20%"/>我是谁</template>
+            <template slot="title"><img src="../assets/githubblue.png" width="15%" style="margin-right: 5px"/>{{loginUser.realName}}</template>
             <el-menu-item index="2-1">个人中心</el-menu-item>
             <el-menu-item index="2-2">密码管理</el-menu-item>
             <el-menu-item index="2-3" @click="logOut()">登出</el-menu-item>
@@ -63,65 +64,72 @@
 </template>
 
 <script>
-  export default {
-    name: 'dog',
-    data () {
-      return {
-        isCollapse: false,
-        menuControlIcon: 'layui-icon layui-icon-shrink-right',
-        menuList: [],
-        activePath: ''
-      }
-    },
-    created () {
-      this.getMenuList('top', 2)
-      this.activePath = window.sessionStorage.getItem('activePath')
-    },
-    methods: {
-      //退出
-      logOut () {
-        window.localStorage.clear()
-        window.sessionStorage.clear()
-        this.$router.push('/login')
-      },
-      //获取菜单列表
-      async getMenuList (menuCode, lowLevel) {
-        const { data: res } = await this.$http.get('menu/tree', {
-          params: {
-            menuCode: menuCode,
-            lowLevel: lowLevel
-          }
-        })
-        if(res.status != 200){
+    export default {
+        name: 'dog',
+        data() {
+            return {
+                isCollapse: false,
+                menuControlIcon: 'layui-icon layui-icon-shrink-right',
+                menuList: [],
+                activePath: '',
+                loginUser: {}
+            }
+        },
+        created() {
+            this.getMenuList()
+            this.activePath = window.sessionStorage.getItem('activePath')
+            this.getLoginUser()
+        },
+        methods: {
+            //退出
+            logOut() {
+                window.localStorage.clear()
+                window.sessionStorage.clear()
+                this.$http.get('/erus/logout').catch(res => console.log(res))
+                this.$router.push('/login')
+            },
+            async getLoginUser() {
+                const {data: res} = await this.$http.get('/erus/info')
+                if (res.status != 200) {
+                    this.$message.error("状态错误，请重新登陆")
+                    this.logOut();
+                } else {
+                    this.loginUser = res.data
+                }
+            },
+            //获取菜单列表
+            async getMenuList() {
+                const {data: res} = await this.$http.get('menu/loginMenu')
+                if (res.status != 200) {
 
-          layer.msg(res.statusName, {
-            offset: '15px',
-            icon: 5,
-            time: 1000
-          })
-        }else {
-          this.menuList = res.data.children
+                    layer.msg(res.statusName, {
+                        offset: '15px',
+                        icon: 5,
+                        time: 1000
+                    })
+                } else {
+                    this.menuList = res.data.children
+                }
+            },
+            closeAndOpen() {
+                if (this.menuControlIcon == 'layui-icon layui-icon-shrink-right') {
+                    this.menuControlIcon = 'layui-icon layui-icon-spread-left'
+                } else {
+                    this.menuControlIcon = 'layui-icon layui-icon-shrink-right'
+                }
+                if (this.isCollapse == false) {
+                    this.isCollapse = true
+                } else {
+                    this.isCollapse = false
+                }
+            },
+            //保存激活状态下path
+            saveStatus(activePath) {
+                window.sessionStorage.setItem("activePath", activePath)
+                this.activePath = activePath
+            }
         }
-      },
-      closeAndOpen() {
-        if(this.menuControlIcon=='layui-icon layui-icon-shrink-right'){
-          this.menuControlIcon = 'layui-icon layui-icon-spread-left'
-        }else {
-          this.menuControlIcon = 'layui-icon layui-icon-shrink-right'
-        }
-        if(this.isCollapse==false){
-          this.isCollapse = true
-        }else {
-          this.isCollapse = false
-        }
-      },
-      //保存激活状态下path
-      saveStatus(activePath) {
-        window.sessionStorage.setItem("activePath",activePath)
-        this.activePath = activePath
-      }
     }
-  }
 </script>
 
 <style lang="less" scoped>
