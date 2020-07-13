@@ -40,7 +40,7 @@
       <el-table
         :data="userList"
         border
-        style="width: 100%"
+        style="width: 95%"
         empty-text="当前项没有数据"
         :header-cell-style="{background: '#eef1f6',color:'#606266',textAlign: 'center'}"
         :cell-style="{textAlign: 'center'}">
@@ -550,6 +550,10 @@
 
   .item {
     margin-bottom: 18px;
+  }
+
+  .el-table {
+    margin-left: 25px;
   }
 
   .clearfix:before,

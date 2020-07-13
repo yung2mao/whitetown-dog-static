@@ -4,6 +4,7 @@ import login from '../components/login.vue'
 import dog from '../components/dog'
 import welcome from '../components/welcome'
 import user from '../components/auth/user'
+import role from '../components/auth/role'
 
 Vue.use(VueRouter)
 const originalPush = VueRouter.prototype.push
@@ -31,6 +32,10 @@ const routes = [
       {
         path: '/dog/auth/user',
         component: user
+      },
+      {
+        path: '/dog/auth/role',
+        component: role
       }]
   }
 ]
