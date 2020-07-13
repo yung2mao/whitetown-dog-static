@@ -70,7 +70,7 @@
               v-model="scope.row.roleStatus==0"
               active-color="#13ce66"
               inactive-color="#ff4949"
-              @change="">
+              @change="roleStatusChange(scope.row)">
             </el-switch>
           </template>
         </el-table-column>
@@ -89,10 +89,13 @@
           width="300">
           <template slot-scope="scope">
             <button type="button" class="layui-btn layui-btn-xs layui-btn-radius layui-btn-primary"
-                    @click="">编辑
+                    @click="updateRoleDialogOpen(scope.row)">编辑
             </button>
             <button type="button" class="layui-btn layui-btn-xs layui-btn-radius layui-btn-danger"
                     @click="">删除
+            </button>
+            <button type="button" class="layui-btn layui-btn-xs layui-btn-radius layui-btn-warm"
+                    @click="">菜单配置
             </button>
             <button type="button" class="layui-btn layui-btn-xs layui-btn-radius layui-btn-normal"
                     @click="">查看用户
@@ -109,8 +112,8 @@
       @close="addRoleReset()">
       <el-form :model="addRoleInfo" :rules="addRoleRules" ref="addRoleRef" label-width="70px"
                class="demo-ruleForm">
-        <el-form-item label="名 称: " prop="roleName">
-          <el-input v-model="addRoleInfo.roleName" placeholder="请输入英文名称"></el-input>
+        <el-form-item label="名 称: " prop="name">
+          <el-input v-model="addRoleInfo.name" placeholder="请输入英文名称"></el-input>
         </el-form-item>
         <el-form-item label="描 述: " prop="description">
           <el-input v-model="addRoleInfo.description" placeholder="请输入中文描述"></el-input>
@@ -122,6 +125,30 @@
       <span slot="footer" class="dialog-footer">
         <el-button type="primary" @click="addRole()">确 定</el-button>
         <el-button @click="addRoleDialog = false">取 消</el-button>
+      </span>
+    </el-dialog>
+    <!--编辑菜单-->
+    <el-dialog
+      title="编辑菜单"
+      :visible.sync="updateRoleDialog"
+      width="30%"
+      center
+      @close="updateRoleReset()">
+      <el-form :model="updateRoleInfo" :rules="updateRoleRules" ref="updateRoleRef" label-width="70px"
+               class="demo-ruleForm">
+        <el-form-item label="名 称: " prop="name">
+          <el-input v-model="updateRoleInfo.name" placeholder="请输入英文名称" disabled></el-input>
+        </el-form-item>
+        <el-form-item label="描 述: " prop="description">
+          <el-input v-model="updateRoleInfo.description" placeholder="请输入中文描述"></el-input>
+        </el-form-item>
+        <el-form-item label="序 号: " prop="sort">
+          <el-input v-model="updateRoleInfo.sort" placeholder="请输入数字"></el-input>
+        </el-form-item>
+      </el-form>
+      <span slot="footer" class="dialog-footer">
+        <el-button type="primary" @click="updateRole()">确 定</el-button>
+        <el-button @click="updateRoleDialog = false">取 消</el-button>
       </span>
     </el-dialog>
   </div>
@@ -165,16 +192,16 @@
                 addRoleInfo: {},
                 addRoleDialog: false,
                 addRoleRules: {
-                    roleName: [
+                    name: [
                         {
                             required: true,
                             message: '请输入角色名称',
                             trigger: 'blur'
                         },
                         {
-                            min: 3,
+                            min: 2,
                             max: 20,
-                            message: '角色名称长度3-20',
+                            message: '角色名称长度2-20',
                             trigger: 'blur'
                         }
                     ],
@@ -185,9 +212,26 @@
                             trigger: 'blur'
                         },
                         {
-                            min: 3,
+                            min: 2,
                             max: 20,
-                            message: '角色描述长度3-20',
+                            message: '角色描述长度2-20',
+                            trigger: 'blur'
+                        }
+                    ]
+                },
+                updateRoleDialog: false,
+                updateRoleInfo: {},
+                updateRoleRules: {
+                    description: [
+                        {
+                            required: true,
+                            message: '请输入角色描述',
+                            trigger: 'blur'
+                        },
+                        {
+                            min: 2,
+                            max: 20,
+                            message: '角色描述长度2-20',
                             trigger: 'blur'
                         }
                     ]
@@ -243,8 +287,73 @@
                             }
                         })
                     }
-
                 })
+            },
+            updateRoleDialogOpen (rowInfo) {
+                this.updateRoleDialog = true
+                this.updateRoleInfo = rowInfo
+            },
+            updateRoleReset () {
+                this.$refs.updateRoleRef.resetFields()
+            },
+            updateRole() {
+                this.$refs.updateRoleRef.validate(valid => {
+                    if(!valid){
+                        return
+                    }else {
+                        var regex = /^\d+$/
+                        if(!regex.test(this.updateRoleInfo.sort)){
+                            return layer.msg("序号输入格式错误", {
+                                offset: '15px',
+                                icon: 5,
+                                time: 1000
+                            })
+                        }
+                        const that = this
+                        this.$http.post('/role/update', this.updateRoleInfo).then(function (result) {
+                            const res = result.data
+                            if(res.status == 200){
+                                layer.msg('更新成功', {
+                                    offset: '15px',
+                                    icon: 1,
+                                    time: 1000
+                                }, function () {
+                                    that.updateRoleDialog = false
+                                    that.initRoleList()
+                                })
+                            }else {
+                                layer.msg(res.statusName, {
+                                    offset: '15px',
+                                    icon: 5,
+                                    time: 1000
+                                })
+                            }
+                        })
+                    }
+                })
+            },
+            async roleStatusChange(row) {
+                var roleStatus = row.roleStatus
+                if (roleStatus == 0) {
+                    roleStatus = 1
+                } else if (roleStatus == 1){
+                    roleStatus = 0
+                }
+                const {data: res} = await this.$http.get('/role/status', {
+                    params: {
+                        roleId: row.roleId,
+                        roleStatus: row.roleStatus
+                    }
+                })
+                if(res.status == 200) {
+                    row.roleStatus = roleStatus
+                }else {
+                    layer.msg(res.statusName,{
+                        offset: '15px',
+                        icon: 5,
+                        time: 1000
+                    })
+                }
             }
         }
     }
