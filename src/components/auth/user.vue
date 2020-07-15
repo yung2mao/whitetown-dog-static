@@ -194,353 +194,356 @@
 </template>
 
 <script>
-  export default {
-    name: 'user',
-    data () {
-      //邮箱校验
-      var checkEmail = (rules, value, cb) => {
-        const regex = /^[a-z0-9]+([._\\\\-]*[a-z0-9])*@([a-z0-9]+[-a-z0-9]*[a-z0-9]+.){1,63}[a-z0-9]+$/
-        if (regex.test(value)) {
-          return cb()
-        } else {
-          cb(new Error('邮箱格式错误'))
-        }
-      }
-      //手机号校验
-      var checkTelephone = (rules, value, cb) => {
-        const regex = /^1(3|4|5|6|7|8|9)\d{9}$/
-        if (regex.test(value)) {
-          return cb()
-        }
-        cb(new Error('手机号格式错误'))
-      }
-      return {
-        searchDetail: '',
-        timeScope: [],
-        pickerOptions: {
-          shortcuts: [{
-            text: '最近一周',
-            onClick (picker) {
-              const end = new Date()
-              const start = new Date()
-              start.setTime(start.getTime() - 3600 * 1000 * 24 * 7)
-              picker.$emit('pick', [start, end])
-            }
-          }, {
-            text: '最近一个月',
-            onClick (picker) {
-              const end = new Date()
-              const start = new Date()
-              start.setTime(start.getTime() - 3600 * 1000 * 24 * 30)
-              picker.$emit('pick', [start, end])
-            }
-          }, {
-            text: '最近三个月',
-            onClick (picker) {
-              const end = new Date()
-              const start = new Date()
-              start.setTime(start.getTime() - 3600 * 1000 * 24 * 90)
-              picker.$emit('pick', [start, end])
-            }
-          }]
-        },
-        userList: [],
-        userTotal: 0,
-        currentPage: 0,
-        pageSize: 0,
-        addUserDialog: false,
-        addUserInfo: {
-          username: '',
-          password: ''
-        },
-        addUserInfoRules: {
-          username: [
-            {
-              required: true,
-              message: '请输入用户名',
-              trigger: 'blur'
-            },
-            {
-              min: 3,
-              max: 20,
-              message: '用户名长度3-20',
-              trigger: 'blur'
-            }
-          ],
-          password: [
-            {
-              required: true,
-              message: '请输入密码',
-              trigger: 'blur'
-            },
-            {
-              min: 3,
-              max: 20,
-              message: '密码长度为6-20',
-              trigger: 'blur'
-            }
-          ]
-        },
-        updateUserDialog: false,
-        updateUserInfo: {
-          username: '',
-          realName: '',
-          gender: '男',
-          birthday: '',
-          telephone: '',
-          email: ''
-        },
-        updateUserInfoRules: {
-          realName: [
-            {
-              required: true,
-              message: '请输入姓名',
-              trigger: 'blur'
-            },
-            {
-              min: 1,
-              max: 20,
-              message: '姓名长度1-20',
-              trigger: 'blur'
-            }
-          ],
-          telephone: [
-            {
-              required: false
-            },
-            {
-              validator: checkTelephone,
-              trigger: 'blur'
-            }
-          ],
-          email: [
-            {
-              required: false
-            },
-            {
-              validator: checkEmail,
-              trigger: 'blur'
-            }
-          ]
-        }
-      }
-    },
-    created () {
-      this.getUserList(1, 10)
-    },
-    mounted () {
-    },
-    methods: {
-      //获取userList
-      async getUserList (page, size) {
-        const { data: res } = await this.$http.get('/user/pageUser', {
-          params: {
-            page: page,
-            size: size
-          }
-        })
-        if (res.status != 200) {
-          console.log(res.statusName)
-        } else {
-          this.userList = res.data.resultList
-          this.userTotal = res.data.total
-          this.currentPage = res.data.page
-          this.pageSize = res.data.rows
-        }
-      },
-      //普通搜索功能
-      async normalSearchUser () {
-        const { data: res } = await this.$http.get('/user/pageUser', {
-          params: {
-            page: 1,
-            rows: this.pageSize,
-            searchDetail: this.searchDetail,
-            startTime: this.timeScope[0],
-            endTime: this.timeScope[1]
-          }
-        })
-        if (res.status == 200) {
-          this.userList = res.data.resultList
-          this.userTotal = res.data.total
-          this.currentPage = res.data.page
-          this.pageSize = res.data.rows
-        } else {
-          layer.msg(res.statusName, {
-            offset: '15px',
-            icon: 5,
-            time: 1000
-          })
-        }
-      },
-      //用户状态变更
-      async userStatusUpdate (row) {
-        var userStatus = row.userStatus
-        if (userStatus == 0) {
-          userStatus = 1
-        } else if (1 == userStatus) {
-          userStatus = 0
-        }
-        const { data: res } = await this.$http.get('/user/active', {
-          params: {
-            username: row.username,
-            userStatus: userStatus
-          }
-        })
-        if (res.status == 200) {
-          row.userStatus = userStatus
-        } else {
-          layer.msg(res.statusName, {
-            offset: '15px',
-            icon: 5,
-            time: 1000
-          })
-        }
-      },
-      //删除用户
-      deleteUser (row) {
-        const that = this
-        layer.confirm('此操作不可恢复, 确认删除？', {
-          title: false,
-          closeBtn: 0,
-          btn: ['确认', '取消']
-          ,
-          yes: async function (index, layero) {
-              const {data: res} = await that.$http.get('/user/active', {
-                  params: {
-                      username: row.username,
-                      userStatus: 2
-                  }
-              })
-              if (res.status == 200) {
-                  await that.getUserList(that.currentPage, that.pageSize)
-                  await layer.closeAll()
-              } else {
-                  layer.closeAll()
-                  layer.msg(res.statusName, {
-                      offset: '15px',
-                      icon: 5,
-                      time: 1000
-                  })
-              }
-          },
-          btn2: function (index) {
-            layer.closeAll()
-          }
-        })
-      },
-      //添加用户对话框关闭
-      addUserDialogReset () {
-        this.$refs.addUserInfoRef.resetFields()
-      },
-      addUser () {
-        this.$refs.addUserInfoRef.validate(valid => {
-          if (!valid) {
-            return
-          } else {
-            const that = this
-            this.$http.post('/user/registry', this.addUserInfo)
-              .then(function (result) {
-                const res = result.data
-                if (res.status == 200) {
-                  layer.msg('添加成功', {
-                    offset: '15px',
-                    icon: 1,
-                    time: 1000
-                  }, function () {
-                    that.addUserDialog = false
-                    that.getUserList(that.currentPage, that.pageSize)
-                  })
+    export default {
+        name: 'user',
+        data() {
+            //邮箱校验
+            var checkEmail = (rules, value, cb) => {
+                const regex = /^[a-z0-9]+([._\\\\-]*[a-z0-9])*@([a-z0-9]+[-a-z0-9]*[a-z0-9]+.){1,63}[a-z0-9]+$/
+                if (regex.test(value)) {
+                    return cb()
                 } else {
-                  layer.msg(res.statusName, {
-                    offset: '15px',
-                    icon: 5,
-                    time: 1000
-                  })
+                    cb(new Error('邮箱格式错误'))
                 }
-              })
-          }
-        })
-      },
-      //修改用户对话框打开
-      updateUserDialogOpen (row) {
-        this.updateUserDialog = true
-        this.updateUserInfo = row
-      },
-      //修改用户弹窗关闭时调用
-      updateUserDialogReset () {
-        this.$refs.updateUserInfoRef.resetFields()
-      },
-      //修改用户按钮单击触发
-      updateUser () {
-        var that = this
-        this.$refs.updateUserInfoRef.validate(valid => {
-          if (!valid) {
-            return
-          }
-          this.$http.post('/user/update', this.updateUserInfo)
-            .then(function (result) {
-              const res = result.data
-              if (res.status != 200) {
-                layer.msg(res.statusName, {
-                  offset: '15px',
-                  icon: 5,
-                  time: 1000
-                })
-                return
-              } else {
-                layer.msg('更新成功', {
-                  offset: '15px',
-                  icon: 1,
-                  time: 1000
-                })
-                that.updateUserDialog = false
-                that.getUserList(that.currentPage,that.pageSize)
-              }
-            })
-        })
-      },
-      roleUpdate (username) {
-        console.log(username)
-      },
-      updatePwd (username) {
-        const that = this
-        layer.confirm('用户密码将被重置，确认继续？', {
-          title: false,
-          closeBtn: 0,
-          btn: ['确认', '取消']
-          ,
-          yes: async function (index, layero) {
-            const {data:res} = await that.$http.get('/user/reSetPwd', {
-              params: { username: username }
-            })
-            layer.closeAll()
-            if(res.status != 200){
-              layer.msg('操作失败', {
-                offset: '15px',
-                icon: 5,
-                time: 1000
-              })
-            }else {
-              layer.msg('操作成功', {
-                offset: '15px',
-                icon: 1,
-                time: 1000
-              })
             }
-          },
-          btn2: function (index) {
-            layer.closeAll()
-          }
-        })
-      },
-      handleSizeChange (newSize) {
-        this.getUserList(this.currentPage, newSize)
-      },
-      handleCurrentChange (newPage) {
-        this.getUserList(newPage, this.pageSize)
-      }
+            //手机号校验
+            var checkTelephone = (rules, value, cb) => {
+                const regex = /^1(3|4|5|6|7|8|9)\d{9}$/
+                if (regex.test(value)) {
+                    return cb()
+                }
+                cb(new Error('手机号格式错误'))
+            }
+            return {
+                searchDetail: '',
+                timeScope: [],
+                pickerOptions: {
+                    shortcuts: [{
+                        text: '最近一周',
+                        onClick(picker) {
+                            const end = new Date()
+                            const start = new Date()
+                            start.setTime(start.getTime() - 3600 * 1000 * 24 * 7)
+                            picker.$emit('pick', [start, end])
+                        }
+                    }, {
+                        text: '最近一个月',
+                        onClick(picker) {
+                            const end = new Date()
+                            const start = new Date()
+                            start.setTime(start.getTime() - 3600 * 1000 * 24 * 30)
+                            picker.$emit('pick', [start, end])
+                        }
+                    }, {
+                        text: '最近三个月',
+                        onClick(picker) {
+                            const end = new Date()
+                            const start = new Date()
+                            start.setTime(start.getTime() - 3600 * 1000 * 24 * 90)
+                            picker.$emit('pick', [start, end])
+                        }
+                    }]
+                },
+                userList: [],
+                userTotal: 0,
+                currentPage: 0,
+                pageSize: 0,
+                addUserDialog: false,
+                addUserInfo: {
+                    username: '',
+                    password: ''
+                },
+                addUserInfoRules: {
+                    username: [
+                        {
+                            required: true,
+                            message: '请输入用户名',
+                            trigger: 'blur'
+                        },
+                        {
+                            min: 3,
+                            max: 20,
+                            message: '用户名长度3-20',
+                            trigger: 'blur'
+                        }
+                    ],
+                    password: [
+                        {
+                            required: true,
+                            message: '请输入密码',
+                            trigger: 'blur'
+                        },
+                        {
+                            min: 3,
+                            max: 20,
+                            message: '密码长度为6-20',
+                            trigger: 'blur'
+                        }
+                    ]
+                },
+                updateUserDialog: false,
+                updateUserInfo: {
+                    username: '',
+                    realName: '',
+                    gender: '男',
+                    birthday: '',
+                    telephone: '',
+                    email: ''
+                },
+                updateUserInfoRules: {
+                    realName: [
+                        {
+                            required: true,
+                            message: '请输入姓名',
+                            trigger: 'blur'
+                        },
+                        {
+                            min: 1,
+                            max: 20,
+                            message: '姓名长度1-20',
+                            trigger: 'blur'
+                        }
+                    ],
+                    telephone: [
+                        {
+                            required: false
+                        },
+                        {
+                            validator: checkTelephone,
+                            trigger: 'blur'
+                        }
+                    ],
+                    email: [
+                        {
+                            required: false
+                        },
+                        {
+                            validator: checkEmail,
+                            trigger: 'blur'
+                        }
+                    ]
+                }
+            }
+        },
+        created() {
+            this.getUserList(1, 10)
+        },
+        mounted() {
+        },
+        methods: {
+            //获取userList
+            async getUserList(page, size) {
+                const {data: res} = await this.$http.get('/user/pageUser', {
+                    params: {
+                        page: page,
+                        size: size
+                    }
+                })
+                if (res.status != 200) {
+                    console.log(res.statusName)
+                } else {
+                    this.userList = res.data.resultList
+                    this.userTotal = res.data.total
+                    this.currentPage = res.data.page
+                    this.pageSize = res.data.rows
+                }
+            },
+            //普通搜索功能
+            async normalSearchUser() {
+                if(this.timeScope==null){
+                    this.timeScope = []
+                }
+                const {data: res} = await this.$http.get('/user/pageUser', {
+                    params: {
+                        page: 1,
+                        rows: this.pageSize,
+                        searchDetail: this.searchDetail,
+                        startTime: this.timeScope[0],
+                        endTime: this.timeScope[1]
+                    }
+                })
+                if (res.status === 200) {
+                    this.userList = res.data.resultList
+                    this.userTotal = res.data.total
+                    this.currentPage = res.data.page
+                    this.pageSize = res.data.rows
+                } else {
+                    layer.msg(res.statusName, {
+                        offset: '15px',
+                        icon: 5,
+                        time: 1000
+                    })
+                }
+            },
+            //用户状态变更
+            async userStatusUpdate(row) {
+                var userStatus = row.userStatus
+                if (userStatus == 0) {
+                    userStatus = 1
+                } else if (1 == userStatus) {
+                    userStatus = 0
+                }
+                const {data: res} = await this.$http.get('/user/active', {
+                    params: {
+                        username: row.username,
+                        userStatus: userStatus
+                    }
+                })
+                if (res.status == 200) {
+                    row.userStatus = userStatus
+                } else {
+                    layer.msg(res.statusName, {
+                        offset: '15px',
+                        icon: 5,
+                        time: 1000
+                    })
+                }
+            },
+            //删除用户
+            deleteUser(row) {
+                const that = this
+                layer.confirm('此操作不可恢复, 确认删除？', {
+                    title: false,
+                    closeBtn: 0,
+                    btn: ['确认', '取消']
+                    ,
+                    yes: async function (index, layero) {
+                        const {data: res} = await that.$http.get('/user/active', {
+                            params: {
+                                username: row.username,
+                                userStatus: 2
+                            }
+                        })
+                        if (res.status == 200) {
+                            await that.getUserList(that.currentPage, that.pageSize)
+                            await layer.closeAll()
+                        } else {
+                            layer.closeAll()
+                            layer.msg(res.statusName, {
+                                offset: '15px',
+                                icon: 5,
+                                time: 1000
+                            })
+                        }
+                    },
+                    btn2: function (index) {
+                        layer.closeAll()
+                    }
+                })
+            },
+            //添加用户对话框关闭
+            addUserDialogReset() {
+                this.$refs.addUserInfoRef.resetFields()
+            },
+            addUser() {
+                this.$refs.addUserInfoRef.validate(valid => {
+                    if (!valid) {
+                        return
+                    } else {
+                        const that = this
+                        this.$http.post('/user/registry', this.addUserInfo)
+                            .then(function (result) {
+                                const res = result.data
+                                if (res.status == 200) {
+                                    layer.msg('添加成功', {
+                                        offset: '15px',
+                                        icon: 1,
+                                        time: 1000
+                                    }, function () {
+                                        that.addUserDialog = false
+                                        that.getUserList(that.currentPage, that.pageSize)
+                                    })
+                                } else {
+                                    layer.msg(res.statusName, {
+                                        offset: '15px',
+                                        icon: 5,
+                                        time: 1000
+                                    })
+                                }
+                            })
+                    }
+                })
+            },
+            //修改用户对话框打开
+            updateUserDialogOpen(row) {
+                this.updateUserDialog = true
+                this.updateUserInfo = row
+            },
+            //修改用户弹窗关闭时调用
+            updateUserDialogReset() {
+                this.$refs.updateUserInfoRef.resetFields()
+            },
+            //修改用户按钮单击触发
+            updateUser() {
+                var that = this
+                this.$refs.updateUserInfoRef.validate(valid => {
+                    if (!valid) {
+                        return
+                    }
+                    this.$http.post('/user/update', this.updateUserInfo)
+                        .then(function (result) {
+                            const res = result.data
+                            if (res.status != 200) {
+                                layer.msg(res.statusName, {
+                                    offset: '15px',
+                                    icon: 5,
+                                    time: 1000
+                                })
+                                return
+                            } else {
+                                layer.msg('更新成功', {
+                                    offset: '15px',
+                                    icon: 1,
+                                    time: 1000
+                                })
+                                that.updateUserDialog = false
+                                that.getUserList(that.currentPage, that.pageSize)
+                            }
+                        })
+                })
+            },
+            roleUpdate(username) {
+                console.log(username)
+            },
+            updatePwd(username) {
+                const that = this
+                layer.confirm('用户密码将被重置，确认继续？', {
+                    title: false,
+                    closeBtn: 0,
+                    btn: ['确认', '取消']
+                    ,
+                    yes: async function (index, layero) {
+                        const {data: res} = await that.$http.get('/user/reSetPwd', {
+                            params: {username: username}
+                        })
+                        layer.closeAll()
+                        if (res.status != 200) {
+                            layer.msg('操作失败', {
+                                offset: '15px',
+                                icon: 5,
+                                time: 1000
+                            })
+                        } else {
+                            layer.msg('操作成功', {
+                                offset: '15px',
+                                icon: 1,
+                                time: 1000
+                            })
+                        }
+                    },
+                    btn2: function (index) {
+                        layer.closeAll()
+                    }
+                })
+            },
+            handleSizeChange(newSize) {
+                this.getUserList(this.currentPage, newSize)
+            },
+            handleCurrentChange(newPage) {
+                this.getUserList(newPage, this.pageSize)
+            }
+        }
     }
-  }
 </script>
 
 <style lang="less" scoped>

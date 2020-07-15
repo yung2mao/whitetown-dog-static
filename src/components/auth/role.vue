@@ -30,7 +30,7 @@
         </el-col>
         <el-col :span="6">
           <div class="layui-btn-group">
-            <button type="button" class="layui-btn" @click="">搜索</button>
+            <button type="button" class="layui-btn" @click="search()">搜索</button>
             <button type="button" class="layui-btn" @click="addRoleDialog = true">添加</button>
             <button type="button" class="layui-btn">导出</button>
           </div>
@@ -98,7 +98,7 @@
                     @click="">菜单配置
             </button>
             <button type="button" class="layui-btn layui-btn-xs layui-btn-radius layui-btn-normal"
-                    @click="">查看用户
+                    @click="searchUserByRoleId(scope.row)">查看用户
             </button>
           </template>
         </el-table-column>
@@ -131,7 +131,7 @@
     <el-dialog
       title="编辑菜单"
       :visible.sync="updateRoleDialog"
-      width="30%"
+      width="50%"
       center
       @close="updateRoleReset()">
       <el-form :model="updateRoleInfo" :rules="updateRoleRules" ref="updateRoleRef" label-width="70px"
@@ -151,6 +151,40 @@
         <el-button @click="updateRoleDialog = false">取 消</el-button>
       </span>
     </el-dialog>
+    <!--当前角色下的用户列表-->
+    <el-dialog
+      title="角色-用户信息"
+      :visible.sync="roleUserDialog"
+      width="30%"
+      center>
+      <el-table
+        :data="userList"
+        height="250"
+        empty-text="当前角色没有绑定用户"
+        border
+        style="width: 100%"
+        :header-cell-style="{background: '#eef1f6',color:'#606266',textAlign: 'center'}"
+        :cell-style="{textAlign: 'center'}">
+        <el-table-column
+          prop="username"
+          label="用户名"
+          width="140">
+        </el-table-column>
+        <el-table-column
+          prop="realName"
+          label="姓名"
+          width="140">
+        </el-table-column>
+        <el-table-column
+          prop="userStatus"
+          label="用户状态">
+          <template slot-scope="scope">
+            <span v-if="scope.row.userStatus == 0">活跃</span>
+            <span v-if="scope.row.userStatus == 1">冻结</span>
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-dialog>
   </div>
 </template>
 
@@ -161,6 +195,7 @@
             return {
                 roleName: '',
                 roleList: [],
+                userList: [],
                 timeScope: [],
                 pickerOptions: {
                     shortcuts: [{
@@ -235,7 +270,8 @@
                             trigger: 'blur'
                         }
                     ]
-                }
+                },
+                roleUserDialog: false
             }
         },
         created() {
@@ -248,6 +284,20 @@
                     return console.log(res.statusName)
                 }
                 this.roleList = res.data
+            },
+            async searchUserByRoleId(row) {
+                console.log(row.roleId)
+                const {data: res} = await this.$http.get('/user/roleUsers', {
+                    params: {
+                        roleId: row.roleId
+                    }
+                })
+                if(res.status === 200){
+                    this.userList = res.data.resultList
+                    this.roleUserDialog = true
+                }else {
+                    console.log(res.statusName)
+                }
             },
             //添加用户对话框关闭
             addRoleReset () {
@@ -332,6 +382,7 @@
                     }
                 })
             },
+            /*用户状态变更*/
             async roleStatusChange(row) {
                 var roleStatus = row.roleStatus
                 if (roleStatus == 0) {
@@ -342,7 +393,7 @@
                 const {data: res} = await this.$http.get('/role/status', {
                     params: {
                         roleId: row.roleId,
-                        roleStatus: row.roleStatus
+                        roleStatus: roleStatus
                     }
                 })
                 if(res.status == 200) {
@@ -353,6 +404,23 @@
                         icon: 5,
                         time: 1000
                     })
+                }
+            },
+            async search() {
+                if(this.timeScope==null){
+                    this.timeScope = []
+                }
+                const {data: res} = await this.$http.get('/role/search', {
+                    params: {
+                        detail: this.roleName,
+                        startTime: this.timeScope[0],
+                        endTime: this.timeScope[1]
+                    }
+                })
+                if(res.status === 200){
+                    this.roleList = res.data
+                }else{
+                    return
                 }
             }
         }
