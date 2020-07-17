@@ -92,10 +92,10 @@
                     @click="updateRoleDialogOpen(scope.row)">编辑
             </button>
             <button type="button" class="layui-btn layui-btn-xs layui-btn-radius layui-btn-danger"
-                    @click="">删除
+                    @click="deleteRole(scope.row)">删除
             </button>
             <button type="button" class="layui-btn layui-btn-xs layui-btn-radius layui-btn-warm"
-                    @click="roleMenuDialogOpen()">菜单配置
+                    @click="roleMenuDialogOpen(scope.row)">菜单配置
             </button>
             <button type="button" class="layui-btn layui-btn-xs layui-btn-radius layui-btn-normal"
                     @click="searchUserByRoleId(scope.row)">查看用户
@@ -107,7 +107,7 @@
     <el-dialog
       title="添加菜单"
       :visible.sync="addRoleDialog"
-      width="30%"
+      width="25%"
       center
       @close="addRoleReset()">
       <el-form :model="addRoleInfo" :rules="addRoleRules" ref="addRoleRef" label-width="70px"
@@ -131,7 +131,7 @@
     <el-dialog
       title="编辑菜单"
       :visible.sync="updateRoleDialog"
-      width="50%"
+      width="25%"
       center
       @close="updateRoleReset()">
       <el-form :model="updateRoleInfo" :rules="updateRoleRules" ref="updateRoleRef" label-width="70px"
@@ -190,14 +190,16 @@
       title="菜单配置"
       :visible.sync="menuConfigDialog"
       width="25%"
-      center>
+      center
+      @close="roleMenuDialogClose ()">
       <el-tree
         :data="menuTree"
+        node-key="menuId"
         ref="tree"
         :props="defaultPros"
-        :node-key="menuTree.menuId"
         show-checkbox
-        :default-checked-keys="checkedKey">
+        :check-strictly="menuNodeFlag"
+        :default-expanded-keys="[1]">
       </el-tree>
       <span slot="footer" class="dialog-footer">
         <el-button type="primary" @click="updateRoleMenu()">确 定</el-button>
@@ -292,13 +294,14 @@
                 },
                 roleUserDialog: false,
                 menuConfigDialog: false,
-                menuTree: [
-                ],
+                menuNodeFlag: false,
+                menuTree: [],
+                checkedMenu: [],
+                currentRoleId: -1,
                 defaultPros: {
                     label: 'menuName',
                     children: 'children'
-                },
-                checkedKey: []
+                }
             }
         },
         created() {
@@ -307,7 +310,7 @@
         methods: {
             async initRoleList() {
                 const {data: res} = await this.$http.get('/role/getAll')
-                if(res.status != 200){
+                if (res.status != 200) {
                     return console.log(res.statusName)
                 }
                 this.roleList = res.data
@@ -320,24 +323,24 @@
                         size: 100
                     }
                 })
-                if(res.status === 200){
+                if (res.status === 200) {
                     this.userList = res.data.resultList
                     this.roleUserDialog = true
-                }else {
+                } else {
                     console.log(res.statusName)
                 }
             },
             //添加用户对话框关闭
-            addRoleReset () {
+            addRoleReset() {
                 this.$refs.addRoleRef.resetFields()
             },
             addRole() {
                 this.$refs.addRoleRef.validate(valid => {
-                    if(!valid){
+                    if (!valid) {
                         return
-                    }else {
+                    } else {
                         var regex = /^\d+$/
-                        if(!regex.test(this.addRoleInfo.sort)){
+                        if (!regex.test(this.addRoleInfo.sort)) {
                             return layer.msg("序号输入格式错误", {
                                 offset: '15px',
                                 icon: 5,
@@ -347,7 +350,7 @@
                         const that = this
                         this.$http.post('/role/add', this.addRoleInfo).then(function (result) {
                             const res = result.data
-                            if(res.status == 200){
+                            if (res.status == 200) {
                                 layer.msg('添加成功', {
                                     offset: '15px',
                                     icon: 1,
@@ -356,7 +359,7 @@
                                     that.addRoleDialog = false
                                     that.initRoleList()
                                 })
-                            }else {
+                            } else {
                                 layer.msg(res.statusName, {
                                     offset: '15px',
                                     icon: 5,
@@ -367,20 +370,20 @@
                     }
                 })
             },
-            updateRoleDialogOpen (rowInfo) {
+            updateRoleDialogOpen(rowInfo) {
                 this.updateRoleDialog = true
                 this.updateRoleInfo = rowInfo
             },
-            updateRoleReset () {
+            updateRoleReset() {
                 this.$refs.updateRoleRef.resetFields()
             },
             updateRole() {
                 this.$refs.updateRoleRef.validate(valid => {
-                    if(!valid){
+                    if (!valid) {
                         return
-                    }else {
-                        var regex = /^\d+$/
-                        if(!regex.test(this.updateRoleInfo.sort)){
+                    } else {
+                        let regex = /^\d+$/
+                        if (!regex.test(this.updateRoleInfo.sort)) {
                             return layer.msg("序号输入格式错误", {
                                 offset: '15px',
                                 icon: 5,
@@ -390,7 +393,7 @@
                         const that = this
                         this.$http.post('/role/update', this.updateRoleInfo).then(function (result) {
                             const res = result.data
-                            if(res.status == 200){
+                            if (res.status == 200) {
                                 layer.msg('更新成功', {
                                     offset: '15px',
                                     icon: 1,
@@ -399,7 +402,7 @@
                                     that.updateRoleDialog = false
                                     that.initRoleList()
                                 })
-                            }else {
+                            } else {
                                 layer.msg(res.statusName, {
                                     offset: '15px',
                                     icon: 5,
@@ -415,7 +418,7 @@
                 var roleStatus = row.roleStatus
                 if (roleStatus == 0) {
                     roleStatus = 1
-                } else if (roleStatus == 1){
+                } else if (roleStatus == 1) {
                     roleStatus = 0
                 }
                 const {data: res} = await this.$http.get('/role/status', {
@@ -424,18 +427,19 @@
                         roleStatus: roleStatus
                     }
                 })
-                if(res.status == 200) {
+                if (res.status == 200) {
                     row.roleStatus = roleStatus
-                }else {
-                    layer.msg(res.statusName,{
+                } else {
+                    layer.msg(res.statusName, {
                         offset: '15px',
                         icon: 5,
                         time: 1000
                     })
                 }
             },
+            //搜索角色
             async search() {
-                if(this.timeScope==null){
+                if (this.timeScope == null) {
                     this.timeScope = []
                 }
                 const {data: res} = await this.$http.get('/role/search', {
@@ -445,35 +449,102 @@
                         endTime: this.timeScope[1]
                     }
                 })
-                if(res.status === 200){
+                if (res.status === 200) {
                     this.roleList = res.data
-                }else{
+                } else {
                     return
                 }
             },
-            async roleMenuDialogOpen() {
-                this.menuTree = []
-                this.menuConfigDialog = true
+            //菜单绑定相关
+            async roleMenuDialogOpen(row) {
                 const {data: res} = await this.$http.get('/menu/tree', {
                     params: {
                         menuId: 1,
                         lowLevel: 100
                     }
                 })
-                if(res.status === 200) {
-                    var menuArr = []
+                if (res.status === 200) {
+                    let menuArr = []
                     menuArr.push(res.data)
                     this.menuTree = menuArr
-                }else{
+                } else {
                     console.log(res.statusName)
                     this.menuConfigDialog = false
                 }
+                this.menuConfigDialog = true
+                this.menuNodeFlag = true
+                const {data: response} = await this.$http.get('/menu/roleMenuIds', {
+                    params: {
+                        roleId: row.roleId
+                    }
+                })
+                if (response.status === 200) {
+                    this.$refs.tree.setCheckedKeys(response.data)
+                    this.menuNodeFlag = false
+                } else {
+                    console.log(res.statusName)
+                }
+                this.currentRoleId = row.roleId
             },
-            updateRoleMenu() {
-                let menuChecked = this.$refs.tree.getCheckedNodes(false,true)
+            roleMenuDialogClose() {
+                this.menuTree = []
+                this.checkedMenu = []
+                this.currentRoleId = -1
+                this.menuConfigDialog = false
+            },
+            async updateRoleMenu() {
+                let menuChecked = this.$refs.tree.getCheckedNodes(false, true)
                 let menuIds = []
                 menuChecked.forEach(menu => menuIds.push(menu.menuId))
-
+                const {data: res} = await this.$http.post('/menu/role_menu', {
+                    roleId: this.currentRoleId,
+                    menuIds: menuIds
+                })
+                if (res.status === 200) {
+                    layer.msg("菜单绑定成功", {
+                        offset: '15px',
+                        icon: 1,
+                        time: 1000
+                    })
+                    this.menuConfigDialog = false
+                } else {
+                    layer.msg(res.statusName, {
+                        offset: '15px',
+                        icon: 5,
+                        time: 1000
+                    })
+                }
+            },
+            deleteRole(row) {
+                const that = this
+                layer.confirm('此操作不可恢复, 确认删除？', {
+                    title: false,
+                    closeBtn: 0,
+                    btn: ['确认', '取消']
+                    ,
+                    yes: async function (index, layero) {
+                        const {data: res} = await that.$http.get('/role/status', {
+                            params: {
+                                roleId: row.roleId,
+                                roleStatus: 2
+                            }
+                        })
+                        if (res.status == 200) {
+                            await that.initRoleList()
+                            await layer.closeAll()
+                        } else {
+                            layer.closeAll()
+                            layer.msg(res.statusName, {
+                                offset: '15px',
+                                icon: 5,
+                                time: 1000
+                            })
+                        }
+                    },
+                    btn2: function (index) {
+                        layer.closeAll()
+                    }
+                })
             }
         }
     }
