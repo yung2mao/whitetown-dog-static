@@ -28,7 +28,8 @@ import {
   Switch,
   Pagination,
   DatePicker,
-  Dialog
+  Dialog,
+  Tree
 } from 'element-ui'
 
 Vue.use(Form)
@@ -58,4 +59,5 @@ Vue.use(Switch)
 Vue.use(Pagination)
 Vue.use(DatePicker)
 Vue.use(Dialog)
+Vue.use(Tree)
 Vue.prototype.$message = Message

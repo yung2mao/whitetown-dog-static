@@ -9,7 +9,7 @@
       <el-row :gutter="15">
         <el-col :span="5">
           <el-input
-            placeholder="请输入角色名称"
+            placeholder="请输入角色名称或描述"
             prefix-icon="el-icon-search"
             v-model="roleName">
           </el-input>
@@ -39,7 +39,7 @@
       <el-table
         :data="roleList"
         style="width: 100%"
-        height="600"
+        max-height="600"
         empty-text="当前项没有数据"
         :header-cell-style="{background: '#eef1f6',color:'#606266',textAlign: 'center'}"
         :cell-style="{textAlign: 'center'}">
@@ -95,7 +95,7 @@
                     @click="">删除
             </button>
             <button type="button" class="layui-btn layui-btn-xs layui-btn-radius layui-btn-warm"
-                    @click="">菜单配置
+                    @click="roleMenuDialogOpen()">菜单配置
             </button>
             <button type="button" class="layui-btn layui-btn-xs layui-btn-radius layui-btn-normal"
                     @click="searchUserByRoleId(scope.row)">查看用户
@@ -159,7 +159,7 @@
       center>
       <el-table
         :data="userList"
-        height="250"
+        max-height="250"
         empty-text="当前角色没有绑定用户"
         border
         style="width: 100%"
@@ -185,6 +185,25 @@
         </el-table-column>
       </el-table>
     </el-dialog>
+    <!--菜单配置Dialog-->
+    <el-dialog
+      title="菜单配置"
+      :visible.sync="menuConfigDialog"
+      width="25%"
+      center>
+      <el-tree
+        :data="menuTree"
+        ref="tree"
+        :props="defaultPros"
+        :node-key="menuTree.menuId"
+        show-checkbox
+        :default-checked-keys="checkedKey">
+      </el-tree>
+      <span slot="footer" class="dialog-footer">
+        <el-button type="primary" @click="updateRoleMenu()">确 定</el-button>
+        <el-button @click="menuConfigDialog = false">取 消</el-button>
+      </span>
+    </el-dialog>
   </div>
 </template>
 
@@ -200,7 +219,7 @@
                 pickerOptions: {
                     shortcuts: [{
                         text: '最近一周',
-                        onClick (picker) {
+                        onClick(picker) {
                             const end = new Date()
                             const start = new Date()
                             start.setTime(start.getTime() - 3600 * 1000 * 24 * 7)
@@ -208,7 +227,7 @@
                         }
                     }, {
                         text: '最近一个月',
-                        onClick (picker) {
+                        onClick(picker) {
                             const end = new Date()
                             const start = new Date()
                             start.setTime(start.getTime() - 3600 * 1000 * 24 * 30)
@@ -216,7 +235,7 @@
                         }
                     }, {
                         text: '最近三个月',
-                        onClick (picker) {
+                        onClick(picker) {
                             const end = new Date()
                             const start = new Date()
                             start.setTime(start.getTime() - 3600 * 1000 * 24 * 90)
@@ -271,7 +290,15 @@
                         }
                     ]
                 },
-                roleUserDialog: false
+                roleUserDialog: false,
+                menuConfigDialog: false,
+                menuTree: [
+                ],
+                defaultPros: {
+                    label: 'menuName',
+                    children: 'children'
+                },
+                checkedKey: []
             }
         },
         created() {
@@ -286,10 +313,11 @@
                 this.roleList = res.data
             },
             async searchUserByRoleId(row) {
-                console.log(row.roleId)
                 const {data: res} = await this.$http.get('/user/roleUsers', {
                     params: {
-                        roleId: row.roleId
+                        roleId: row.roleId,
+                        page: 1,
+                        size: 100
                     }
                 })
                 if(res.status === 200){
@@ -422,6 +450,30 @@
                 }else{
                     return
                 }
+            },
+            async roleMenuDialogOpen() {
+                this.menuTree = []
+                this.menuConfigDialog = true
+                const {data: res} = await this.$http.get('/menu/tree', {
+                    params: {
+                        menuId: 1,
+                        lowLevel: 100
+                    }
+                })
+                if(res.status === 200) {
+                    var menuArr = []
+                    menuArr.push(res.data)
+                    this.menuTree = menuArr
+                }else{
+                    console.log(res.statusName)
+                    this.menuConfigDialog = false
+                }
+            },
+            updateRoleMenu() {
+                let menuChecked = this.$refs.tree.getCheckedNodes(false,true)
+                let menuIds = []
+                menuChecked.forEach(menu => menuIds.push(menu.menuId))
+
             }
         }
     }
