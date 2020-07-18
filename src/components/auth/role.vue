@@ -105,12 +105,14 @@
       </el-table>
     </el-card>
     <el-dialog
-      title="添加菜单"
+      title="添加角色"
       :visible.sync="addRoleDialog"
       width="25%"
       center
       @close="addRoleReset()">
-      <el-form :model="addRoleInfo" :rules="addRoleRules" ref="addRoleRef" label-width="70px"
+      <el-form :model="addRoleInfo" :rules="addRoleRules"
+               ref="addRoleRef" label-width="70px"
+               size="small"
                class="demo-ruleForm">
         <el-form-item label="名 称: " prop="name">
           <el-input v-model="addRoleInfo.name" placeholder="请输入英文名称"></el-input>
@@ -129,12 +131,14 @@
     </el-dialog>
     <!--编辑菜单-->
     <el-dialog
-      title="编辑菜单"
+      title="编辑角色"
       :visible.sync="updateRoleDialog"
       width="25%"
       center
       @close="updateRoleReset()">
-      <el-form :model="updateRoleInfo" :rules="updateRoleRules" ref="updateRoleRef" label-width="70px"
+      <el-form :model="updateRoleInfo" :rules="updateRoleRules"
+               ref="updateRoleRef" label-width="70px"
+               size="small"
                class="demo-ruleForm">
         <el-form-item label="名 称: " prop="name">
           <el-input v-model="updateRoleInfo.name" placeholder="请输入英文名称" disabled></el-input>

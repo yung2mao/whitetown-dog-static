@@ -29,7 +29,13 @@ import {
   Pagination,
   DatePicker,
   Dialog,
-  Tree
+  Tree,
+  Select,
+  Option,
+  Collapse,
+  CollapseItem,
+  Tag,
+  Cascader
 } from 'element-ui'
 
 Vue.use(Form)
@@ -60,4 +66,10 @@ Vue.use(Pagination)
 Vue.use(DatePicker)
 Vue.use(Dialog)
 Vue.use(Tree)
+Vue.use(Select)
+Vue.use(Option)
+Vue.use(Collapse)
+Vue.use(CollapseItem)
+Vue.use(Tag)
+Vue.use(Cascader)
 Vue.prototype.$message = Message

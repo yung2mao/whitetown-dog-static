@@ -131,7 +131,9 @@
       width="30%"
       center
       @close="addUserDialogReset">
-      <el-form :model="addUserInfo" :rules="addUserInfoRules" ref="addUserInfoRef" label-width="70px"
+      <el-form :model="addUserInfo" :rules="addUserInfoRules"
+               ref="addUserInfoRef" label-width="70px"
+               size="small"
                class="demo-ruleForm">
         <el-form-item label="用户名: " prop="username">
           <el-input v-model="addUserInfo.username"></el-input>
@@ -190,10 +192,49 @@
         <el-button @click="updateUserDialog = false">取 消</el-button>
       </span>
     </el-dialog>
+    <el-dialog
+      title="角色分配"
+      :visible.sync="roleConfigDialog"
+      width="20%"
+      center
+      @close="roleDialogClose()">
+      <div class="layui-card">
+        <div class="layui-card-header">[ {{currentRoleUser}} ] 当前角色信息:</div>
+        <div class="layui-card-body">
+          <el-tag
+            v-for="tag in checkedTag"
+            :key="tag.roleId"
+            size="mini"
+            :type="'success'"
+            style="margin-right: 5px">
+            {{tag.description}}
+          </el-tag>
+        </div>
+      </div>
+      <div class="layui-card">
+        <div class="layui-card-header">角色信息更新:</div>
+        <div class="layui-card-body">
+          <el-select v-model="checkedRoles" multiple placeholder="请选择角色" style="margin-left: 20px">
+            <el-option
+              v-for="item in roleList"
+              :key="item.roleId+''"
+              :label="item.description"
+              :value="item.roleId">
+            </el-option>
+          </el-select>
+        </div>
+      </div>
+      <span slot="footer" class="dialog-footer">
+        <el-button type="primary" @click="updateUserRole()">确 定</el-button>
+        <el-button @click="roleConfigDialog = false">取 消</el-button>
+      </span>
+    </el-dialog>
   </div>
 </template>
 
 <script>
+    import {ArraySet} from "less";
+
     export default {
         name: 'user',
         data() {
@@ -322,7 +363,12 @@
                             trigger: 'blur'
                         }
                     ]
-                }
+                },
+                roleConfigDialog: false,
+                roleList: [],
+                currentRoleUser: '',
+                checkedRoles: [],
+                checkedTag: []
             }
         },
         created() {
@@ -377,7 +423,7 @@
             },
             //用户状态变更
             async userStatusUpdate(row) {
-                var userStatus = row.userStatus
+                let userStatus = row.userStatus
                 if (userStatus == 0) {
                     userStatus = 1
                 } else if (1 == userStatus) {
@@ -502,8 +548,51 @@
                         })
                 })
             },
-            roleUpdate(username) {
-                console.log(username)
+            //角色分配
+            async roleUpdate(username) {
+                this.roleConfigDialog = true
+                this.currentRoleUser = username
+                const {data: response} = await this.$http.get('/role/getAll')
+                if(response.status === 200){
+                    this.roleList = response.data
+                }else {
+                    this.roleConfigDialog = false
+                    console.log(response.statusName)
+                    return
+                }
+                const {data: res} = await this.$http.get('role/users?username='+username)
+                if(res.status === 200) {
+                    this.checkedTag = res.data
+                }else {
+                    this.roleConfigDialog = false
+                    console.log(res.statusName)
+                    return
+                }
+            },
+            roleDialogClose() {
+                this.roleList = []
+                this.checkedRoles = []
+                this.currentRoleUser = ''
+            },
+            async updateUserRole() {
+                const {data: res} = await this.$http.post('/role/configureRole', {
+                    username: this.currentRoleUser,
+                    roleIds: this.checkedRoles
+                })
+                if(res.status === 200){
+                    this.roleConfigDialog = false
+                    layer.msg('角色更新成功', {
+                        offset: '15px',
+                        icon: 1,
+                        time: 1000
+                    })
+                }else {
+                    layer.msg(res.statusName, {
+                        offset: '15px',
+                        icon: 5,
+                        time: 1000
+                    })
+                }
             },
             updatePwd(username) {
                 const that = this
