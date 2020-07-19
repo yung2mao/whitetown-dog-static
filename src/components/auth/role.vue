@@ -217,6 +217,14 @@
     export default {
         name: "role",
         data() {
+            var checkSort = (rules, value, cb) => {
+                const regex = /^[1-9][0-9]*$/
+                if (regex.test(value)) {
+                    return cb()
+                } else {
+                    cb(new Error('请输入数字'))
+                }
+            }
             return {
                 roleName: '',
                 roleList: [],
@@ -277,6 +285,15 @@
                             message: '角色描述长度2-20',
                             trigger: 'blur'
                         }
+                    ],
+                    sort: [
+                        {
+                            required: false
+                        },
+                        {
+                            validator: checkSort,
+                            trigger: 'blur'
+                        }
                     ]
                 },
                 updateRoleDialog: false,
@@ -292,6 +309,15 @@
                             min: 2,
                             max: 20,
                             message: '角色描述长度2-20',
+                            trigger: 'blur'
+                        }
+                    ],
+                    sort: [
+                        {
+                            required: false
+                        },
+                        {
+                            validator: checkSort,
                             trigger: 'blur'
                         }
                     ]
@@ -343,14 +369,6 @@
                     if (!valid) {
                         return
                     } else {
-                        var regex = /^\d+$/
-                        if (!regex.test(this.addRoleInfo.sort)) {
-                            return layer.msg("序号输入格式错误", {
-                                offset: '15px',
-                                icon: 5,
-                                time: 1000
-                            })
-                        }
                         const that = this
                         this.$http.post('/role/add', this.addRoleInfo).then(function (result) {
                             const res = result.data
@@ -376,7 +394,7 @@
             },
             updateRoleDialogOpen(rowInfo) {
                 this.updateRoleDialog = true
-                this.updateRoleInfo = rowInfo
+                this.updateRoleInfo = JSON.parse(JSON.stringify(rowInfo))
             },
             updateRoleReset() {
                 this.$refs.updateRoleRef.resetFields()

@@ -513,7 +513,7 @@
             //修改用户对话框打开
             updateUserDialogOpen(row) {
                 this.updateUserDialog = true
-                this.updateUserInfo = row
+                this.updateUserInfo = JSON.parse(JSON.stringify(row))
             },
             //修改用户弹窗关闭时调用
             updateUserDialogReset() {
