@@ -63,6 +63,16 @@
           width="100%">
         </el-table-column>
         <el-table-column
+          prop="deptName"
+          label="部门"
+          width="100%">
+        </el-table-column>
+        <el-table-column
+          prop="positionName"
+          label="职位"
+          width="100%">
+        </el-table-column>
+        <el-table-column
           prop="birthday"
           label="出生日期"
           width="100%">
@@ -172,6 +182,27 @@
             </el-radio>
           </el-radio-group>
         </el-form-item>
+        <el-form-item label="职 位: ">
+          <el-select v-model="deptSelect"
+                     placeholder="请选择部门"
+                     style="width: 120px"
+                     @blur="deptSelectChange">
+            <el-option
+              v-for="item in deptList"
+              :key="item.deptId+''"
+              :label="item.deptName"
+              :value="item.deptId">
+            </el-option>
+          </el-select>
+          <el-select v-model="selectPosition" placeholder="请选择职位" style="width: 120px;margin-left: 20px">
+            <el-option
+              v-for="item in positionList"
+              :key="item.positionId+''"
+              :label="item.positionName"
+              :value="item.positionId">
+            </el-option>
+          </el-select>
+        </el-form-item>
         <el-form-item label="生 日: ">
           <el-date-picker
             type="date"
@@ -233,8 +264,6 @@
 </template>
 
 <script>
-    import {ArraySet} from "less";
-
     export default {
         name: 'user',
         data() {
@@ -290,10 +319,7 @@
                 currentPage: 0,
                 pageSize: 0,
                 addUserDialog: false,
-                addUserInfo: {
-                    username: '',
-                    password: ''
-                },
+                addUserInfo: {},
                 addUserInfoRules: {
                     username: [
                         {
@@ -322,15 +348,12 @@
                         }
                     ]
                 },
+                deptSelect: '',
+                selectPosition: '',
                 updateUserDialog: false,
-                updateUserInfo: {
-                    username: '',
-                    realName: '',
-                    gender: '男',
-                    birthday: '',
-                    telephone: '',
-                    email: ''
-                },
+                updateUserInfo: {},
+                deptList: [],
+                positionList: [],
                 updateUserInfoRules: {
                     realName: [
                         {
@@ -511,13 +534,33 @@
                 })
             },
             //修改用户对话框打开
-            updateUserDialogOpen(row) {
+            async updateUserDialogOpen(row) {
                 this.updateUserDialog = true
                 this.updateUserInfo = JSON.parse(JSON.stringify(row))
+                const {data: res} = await this.$http.get('/dept/allSimple')
+                if(res.status === 200){
+                    this.deptList = res.data
+                }else {
+                    console.log(res.statusName)
+                    this.updateUserDialog = false
+                }
+                this.deptSelect = this.updateUserInfo.deptId
+            },
+            async deptSelectChange() {
+                const {data: res} = await this.$http.get('/position/deptPosition?deptId=' + this.deptSelect)
+                if(res.status === 200) {
+                    this.positionList = res.data
+                }else {
+                    console.log(res.statusName)
+                }
             },
             //修改用户弹窗关闭时调用
             updateUserDialogReset() {
                 this.$refs.updateUserInfoRef.resetFields()
+                this.deptList = []
+                this.positionList = []
+                this.deptSelect = ''
+                this.selectPosition = ''
             },
             //修改用户按钮单击触发
             updateUser() {
@@ -526,6 +569,8 @@
                     if (!valid) {
                         return
                     }
+                    this.updateUserInfo.deptId = this.deptSelect
+                    this.updateUserInfo.positionId = this.selectPosition
                     this.$http.post('/user/update', this.updateUserInfo)
                         .then(function (result) {
                             const res = result.data

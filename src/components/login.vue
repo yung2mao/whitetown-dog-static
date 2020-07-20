@@ -58,60 +58,72 @@
 </template>
 
 <script>
-  export default {
-    name: 'loginForm',
-    data () {
-      return {
-        username: 'admin',
-        password: '123456',
-        captcha: '',
-        verUrl: 'http://127.0.0.1:10003/erus/ver'
-      }
-    },
-    methods: {
-      login () {
-        var username = this.username
-        var password = this.password
-        var captcha = this.captcha
+    export default {
+        name: 'loginForm',
+        data() {
+            return {
+                username: 'admin',
+                password: '123456',
+                captcha: '',
+                verUrl: 'http://127.0.0.1:10003/erus/ver'
+            }
+        },
+        created () {
+            this.enterKeyListen()
+        },
+        methods: {
+            login() {
+                var username = this.username
+                var password = this.password
+                var captcha = this.captcha
 
-        if (username == '' || password == '' || captcha == '') {
-          return false
+                if (username == '' || password == '' || captcha == '') {
+                    return false
+                }
+                var that = this
+                // eslint-disable-next-line no-unused-vars
+                this.$http.post('erus/login',
+                    {
+                        username: username,
+                        password: password,
+                        captcha: captcha
+                    }).then(function (result) {
+                    var res = result.data
+                    if (res.status == 200) {
+                        layer.msg('登录成功', {
+                            offset: '15px',
+                            icon: 1,
+                            time: 1000
+                        }, function () {
+                            window.localStorage.setItem('token', res.data)
+                            that.$router.push('dog').catch(function (error) {
+                                console.log(error)
+                            })
+                        })
+                    } else {
+                        layer.msg(res.statusName, {
+                            offset: '15px',
+                            icon: 5,
+                            time: 2000
+                        })
+                    }
+                })
+            },
+            refreshCaptcha() {
+                var rand = Math.random()
+                this.verUrl = 'http://127.0.0.1:10003/erus/ver?' + rand
+            },
+            enterKeyListen() {
+                let that = this;
+                document.onkeydown = function (e) {
+                    let key = window.event.keyCode;
+                    if (key === 13) {
+                        that.login();//方法
+                    }
+                }
+            }
         }
-        var that = this
-        // eslint-disable-next-line no-unused-vars
-        this.$http.post('erus/login',
-          {
-            username: username,
-            password: password,
-            captcha: captcha
-          }).then(function (result) {
-          var res = result.data
-          if (res.status == 200) {
-            layer.msg('登录成功', {
-              offset: '15px',
-              icon: 1,
-              time: 1000
-            }, function () {
-              window.localStorage.setItem('token', res.data)
-              that.$router.push('dog').catch(function (error) {
-                console.log(error)
-              })
-            })
-          } else {
-            layer.msg(res.statusName, {
-              offset: '15px',
-              icon: 5,
-              time: 2000
-            })
-          }
-        })
-      },
-      refreshCaptcha () {
-        var rand = Math.random()
-        this.verUrl = 'http://127.0.0.1:10003/erus/ver?' + rand
-      }
     }
-  }
 </script>
 
 <style lang="less" scoped>
