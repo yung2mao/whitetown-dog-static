@@ -7,12 +7,35 @@
     </el-breadcrumb>
     <el-card>
       <el-row :gutter="15">
-        <el-col :span="5">
+        <el-col :span="4">
           <el-input
             placeholder="请输入用户名/手机号"
             prefix-icon="el-icon-search"
             v-model="searchDetail">
           </el-input>
+        </el-col>
+        <el-col :span="5">
+          <el-select v-model="pageDeptId"
+                     placeholder="请选择部门"
+                     style="width: 120px"
+                     @change="pageDeptChange()">
+            <el-option
+              v-for="item in deptList"
+              :key="item.deptId+''"
+              :label="item.deptName"
+              :value="item.deptId">
+            </el-option>
+          </el-select>
+          <el-select v-model="pagePositionId"
+                     placeholder="请选择职位"
+                     style="width: 120px;margin-left: 20px">
+            <el-option
+              v-for="item in pagePositionList"
+              :key="item.positionId+''"
+              :label="item.positionName+'-'+item.positionCode"
+              :value="item.positionId">
+            </el-option>
+          </el-select>
         </el-col>
         <el-col :span="5">
           <el-date-picker
@@ -40,7 +63,7 @@
       <el-table
         :data="userList"
         border
-        style="width: 95%"
+        style="width: 100%"
         empty-text="当前项没有数据"
         :header-cell-style="{background: '#eef1f6',color:'#606266',textAlign: 'center'}"
         :cell-style="{textAlign: 'center'}">
@@ -186,7 +209,7 @@
           <el-select v-model="deptSelect"
                      placeholder="请选择部门"
                      style="width: 120px"
-                     @blur="deptSelectChange">
+                     @change="deptSelectChange">
             <el-option
               v-for="item in deptList"
               :key="item.deptId+''"
@@ -198,7 +221,7 @@
             <el-option
               v-for="item in positionList"
               :key="item.positionId+''"
-              :label="item.positionName"
+              :label="item.positionName+'-'+item.positionCode"
               :value="item.positionId">
             </el-option>
           </el-select>
@@ -318,6 +341,9 @@
                 userTotal: 0,
                 currentPage: 0,
                 pageSize: 0,
+                pageDeptId: null,
+                pagePositionId: null,
+                pagePositionList: [],
                 addUserDialog: false,
                 addUserInfo: {},
                 addUserInfoRules: {
@@ -348,8 +374,8 @@
                         }
                     ]
                 },
-                deptSelect: '',
-                selectPosition: '',
+                deptSelect: null,
+                selectPosition: null,
                 updateUserDialog: false,
                 updateUserInfo: {},
                 deptList: [],
@@ -396,6 +422,7 @@
         },
         created() {
             this.getUserList(1, 10)
+            this.deptListInit()
         },
         mounted() {
         },
@@ -417,6 +444,25 @@
                     this.pageSize = res.data.rows
                 }
             },
+            async deptListInit() {
+                const {data: res} = await this.$http.get('/dept/allSimple')
+                if (res.status === 200) {
+                    this.deptList = res.data
+                } else {
+                    console.log(res.statusName)
+                }
+            },
+            async pageDeptChange() {
+                this.pagePositionId = null
+                if (this.pageDeptId != null && this.pageDeptId > 1) {
+                    const {data: res} = await this.$http.get('/position/deptPosition?deptId=' + this.pageDeptId)
+                    if (res.status === 200) {
+                        this.pagePositionList = res.data
+                    } else {
+                        console.log(res.statusName)
+                    }
+                }
+            },
             //普通搜索功能
             async normalSearchUser() {
                 if(this.timeScope==null){
@@ -427,6 +473,8 @@
                         page: 1,
                         rows: this.pageSize,
                         searchDetail: this.searchDetail,
+                        deptId: this.pageDeptId,
+                        positionId: this.pagePositionId,
                         startTime: this.timeScope[0],
                         endTime: this.timeScope[1]
                     }
@@ -537,16 +585,19 @@
             async updateUserDialogOpen(row) {
                 this.updateUserDialog = true
                 this.updateUserInfo = JSON.parse(JSON.stringify(row))
-                const {data: res} = await this.$http.get('/dept/allSimple')
-                if(res.status === 200){
-                    this.deptList = res.data
-                }else {
-                    console.log(res.statusName)
-                    this.updateUserDialog = false
-                }
                 this.deptSelect = this.updateUserInfo.deptId
+                if(this.deptSelect != null && this.deptSelect > 1) {
+                    const {data: res} = await this.$http.get('/position/deptPosition?deptId='+this.deptSelect)
+                    if(res.status === 200) {
+                        this.positionList = res.data
+                        this.selectPosition = this.updateUserInfo.positionId
+                    }else {
+                        console.log(res.statusName)
+                    }
+                }
             },
             async deptSelectChange() {
+                this.selectPosition = null
                 const {data: res} = await this.$http.get('/position/deptPosition?deptId=' + this.deptSelect)
                 if(res.status === 200) {
                     this.positionList = res.data
@@ -557,7 +608,6 @@
             //修改用户弹窗关闭时调用
             updateUserDialogReset() {
                 this.$refs.updateUserInfoRef.resetFields()
-                this.deptList = []
                 this.positionList = []
                 this.deptSelect = ''
                 this.selectPosition = ''
@@ -688,11 +738,6 @@
   .item {
     margin-bottom: 18px;
   }
-
-  .el-table {
-    margin-left: 25px;
-  }
-
   .clearfix:before,
   .clearfix:after {
     display: table;
