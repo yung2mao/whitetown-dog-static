@@ -339,14 +339,14 @@
         },
         methods: {
             async initRoleList() {
-                const {data: res} = await this.$http.get('/role/getAll')
+                const {data: res} = await this.$http.get('/role/get_all')
                 if (res.status != 200) {
                     return console.log(res.statusName)
                 }
                 this.roleList = res.data
             },
             async searchUserByRoleId(row) {
-                const {data: res} = await this.$http.get('/user/roleUsers', {
+                const {data: res} = await this.$http.get('/user/role_users', {
                     params: {
                         roleId: row.roleId,
                         page: 1,
@@ -495,7 +495,7 @@
                 }
                 this.menuConfigDialog = true
                 this.menuNodeFlag = true
-                const {data: response} = await this.$http.get('/menu/roleMenuIds', {
+                const {data: response} = await this.$http.get('/menu/role_menuIds', {
                     params: {
                         roleId: row.roleId
                     }

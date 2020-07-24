@@ -16,7 +16,7 @@
         </el-col>
         <el-col :span="5">
           <el-select v-model="pageDeptId"
-                     placeholder="请选择部门"
+                     placeholder="选择部门"
                      style="width: 120px"
                      @change="pageDeptChange()">
             <el-option
@@ -27,12 +27,12 @@
             </el-option>
           </el-select>
           <el-select v-model="pagePositionId"
-                     placeholder="请选择职位"
+                     placeholder="选择职位"
                      style="width: 120px;margin-left: 20px">
             <el-option
               v-for="item in pagePositionList"
               :key="item.positionId+''"
-              :label="item.positionName+'-'+item.positionCode"
+              :label="item.positionName"
               :value="item.positionId">
             </el-option>
           </el-select>
@@ -221,7 +221,7 @@
             <el-option
               v-for="item in positionList"
               :key="item.positionId+''"
-              :label="item.positionName+'-'+item.positionCode"
+              :label="item.positionName"
               :value="item.positionId">
             </el-option>
           </el-select>
@@ -429,7 +429,7 @@
         methods: {
             //获取userList
             async getUserList(page, size) {
-                const {data: res} = await this.$http.get('/user/pageUser', {
+                const {data: res} = await this.$http.get('/user/page', {
                     params: {
                         page: page,
                         size: size
@@ -445,7 +445,7 @@
                 }
             },
             async deptListInit() {
-                const {data: res} = await this.$http.get('/dept/allSimple')
+                const {data: res} = await this.$http.get('/dept/simples')
                 if (res.status === 200) {
                     this.deptList = res.data
                 } else {
@@ -455,7 +455,7 @@
             async pageDeptChange() {
                 this.pagePositionId = null
                 if (this.pageDeptId != null && this.pageDeptId > 1) {
-                    const {data: res} = await this.$http.get('/position/deptPosition?deptId=' + this.pageDeptId)
+                    const {data: res} = await this.$http.get('/position/depts?deptId=' + this.pageDeptId)
                     if (res.status === 200) {
                         this.pagePositionList = res.data
                     } else {
@@ -468,7 +468,7 @@
                 if(this.timeScope==null){
                     this.timeScope = []
                 }
-                const {data: res} = await this.$http.get('/user/pageUser', {
+                const {data: res} = await this.$http.get('/user/page', {
                     params: {
                         page: 1,
                         rows: this.pageSize,
@@ -500,7 +500,7 @@
                 } else if (1 == userStatus) {
                     userStatus = 0
                 }
-                const {data: res} = await this.$http.get('/user/active', {
+                const {data: res} = await this.$http.get('/user/status', {
                     params: {
                         username: row.username,
                         userStatus: userStatus
@@ -525,7 +525,7 @@
                     btn: ['确认', '取消']
                     ,
                     yes: async function (index, layero) {
-                        const {data: res} = await that.$http.get('/user/active', {
+                        const {data: res} = await that.$http.get('/user/status', {
                             params: {
                                 username: row.username,
                                 userStatus: 2
@@ -587,7 +587,7 @@
                 this.updateUserInfo = JSON.parse(JSON.stringify(row))
                 this.deptSelect = this.updateUserInfo.deptId
                 if(this.deptSelect != null && this.deptSelect > 1) {
-                    const {data: res} = await this.$http.get('/position/deptPosition?deptId='+this.deptSelect)
+                    const {data: res} = await this.$http.get('/position/depts?deptId='+this.deptSelect)
                     if(res.status === 200) {
                         this.positionList = res.data
                         this.selectPosition = this.updateUserInfo.positionId
@@ -598,7 +598,7 @@
             },
             async deptSelectChange() {
                 this.selectPosition = null
-                const {data: res} = await this.$http.get('/position/deptPosition?deptId=' + this.deptSelect)
+                const {data: res} = await this.$http.get('/position/depts?deptId=' + this.deptSelect)
                 if(res.status === 200) {
                     this.positionList = res.data
                 }else {
@@ -647,7 +647,7 @@
             async roleUpdate(username) {
                 this.roleConfigDialog = true
                 this.currentRoleUser = username
-                const {data: response} = await this.$http.get('/role/getAll')
+                const {data: response} = await this.$http.get('/role/get_all')
                 if(response.status === 200){
                     this.roleList = response.data
                 }else {
@@ -670,7 +670,7 @@
                 this.currentRoleUser = ''
             },
             async updateUserRole() {
-                const {data: res} = await this.$http.post('/role/configureRole', {
+                const {data: res} = await this.$http.post('/role/configure_role', {
                     username: this.currentRoleUser,
                     roleIds: this.checkedRoles
                 })
@@ -697,7 +697,7 @@
                     btn: ['确认', '取消']
                     ,
                     yes: async function (index, layero) {
-                        const {data: res} = await that.$http.get('/user/reSetPwd', {
+                        const {data: res} = await that.$http.get('/user/reset_pwd', {
                             params: {username: username}
                         })
                         layer.closeAll()

@@ -99,7 +99,7 @@
             },
             //获取菜单列表
             async getMenuList() {
-                const {data: res} = await this.$http.get('menu/loginMenu')
+                const {data: res} = await this.$http.get('menu/login_menu')
                 if (res.status != 200) {
 
                     layer.msg(res.statusName, {

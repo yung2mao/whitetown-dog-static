@@ -292,7 +292,7 @@
                     }
                 })
                 if (res.status === 200) {
-                    this.menuList.push(res.data)
+                    this.menuList = res.data.children
                 } else {
                     console.log(res.statusName)
                 }
