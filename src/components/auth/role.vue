@@ -31,7 +31,10 @@
         <el-col :span="6">
           <div class="layui-btn-group">
             <button type="button" class="layui-btn" @click="search()">搜索</button>
-            <button type="button" class="layui-btn" @click="addRoleDialog = true">添加</button>
+            <button type="button" class="layui-btn" @click="addRoleDialog = true"
+                    v-for="item in activeMenu"
+                    :key="item.menuId+''"
+                    v-if="item.menuCode=='role_add_button'">添加</button>
             <button type="button" class="layui-btn">导出</button>
           </div>
         </el-col>
@@ -228,6 +231,7 @@
             return {
                 roleName: '',
                 roleList: [],
+                activeMenu: [],
                 userList: [],
                 timeScope: [],
                 pickerOptions: {
@@ -336,6 +340,7 @@
         },
         created() {
             this.initRoleList()
+            this.initActiveMenu()
         },
         methods: {
             async initRoleList() {
@@ -344,6 +349,17 @@
                     return console.log(res.statusName)
                 }
                 this.roleList = res.data
+            },
+            async initActiveMenu() {
+                const {data: res} = await this.$http.get('/menu/login_menu', {
+                    params: {
+                        menuId: 5,
+                        lowLevel: 3
+                    }
+                })
+                if(res.status === 200) {
+                    this.activeMenu = res.data.children
+                }
             },
             async searchUserByRoleId(row) {
                 const {data: res} = await this.$http.get('/user/role_users', {

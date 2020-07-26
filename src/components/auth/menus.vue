@@ -125,7 +125,7 @@
             :options="selectMenuList"
             v-model="addMenuInfo.parentId"
             style="width: 260px"
-            :props="{ checkStrictly: true, value: 'menuId',label: 'menuName'}"
+            :props="{ checkStrictly: true, value: 'menuId',label: 'menuName',expandTrigger: 'hover',emitPath: false}"
             clearable></el-cascader>
         </el-form-item>
         <el-form-item label="路由地址: ">
@@ -210,7 +210,7 @@
         data() {
             var checkSort = (rules, value, cb) => {
                 const regex = /^[1-9][0-9]*$/
-                if (regex.test(value)) {
+                if (value == null || "" ==value || regex.test(value)) {
                     return cb()
                 } else {
                     cb(new Error('请输入数字'))
@@ -310,7 +310,6 @@
                 }
             },
             async addMenuDialogOpen() {
-                this.addMenuDialog = true
                 const {data: res} = await this.$http.get('/menu/tree', {
                     params: {
                         menuId: 1,
@@ -318,16 +317,16 @@
                     }
                 })
                 if(res.status === 200){
+                    this.selectMenuList = []
                     this.selectMenuList.push(res.data)
                 }
+                this.addMenuDialog = true
             },
             addMenuDialogClose() {
                 this.$refs.addMenuRef.resetFields()
-                this.selectMenuList = []
+                this.addMenuInfo = {}
             },
             addMenu() {
-                let checkedParent = this.addMenuInfo.parentId
-                this.addMenuInfo.parentId = checkedParent.pop()
                 this.$refs.addMenuRef.validate(valid => {
                     if(!valid){
                         return
@@ -369,7 +368,6 @@
             },
             updateMenuDialogClose() {
                 this.$refs.updateMenuRef.resetFields()
-                this.selectMenuList = []
             },
             updateMenu() {
                 this.$refs.updateMenuRef.validate(valid => {

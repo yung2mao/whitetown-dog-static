@@ -15,17 +15,16 @@
           </el-input>
         </el-col>
         <el-col :span="5">
-          <el-select v-model="pageDeptId"
-                     placeholder="选择部门"
-                     style="width: 120px"
-                     @change="pageDeptChange()">
-            <el-option
-              v-for="item in deptList"
-              :key="item.deptId+''"
-              :label="item.deptName"
-              :value="item.deptId">
-            </el-option>
-          </el-select>
+          <el-cascader
+            :options="deptTree"
+            :clearable="true"
+            :props="{ checkStrictly: true ,value: 'deptId',label: 'deptName',expandTrigger: 'hover',emitPath: false}"
+            v-model="pageDeptId"
+            placeholder="选择部门"
+            @change="pageDeptChange()"
+            style="width: 120px"
+            clearable>
+          </el-cascader>
           <el-select v-model="pagePositionId"
                      placeholder="选择职位"
                      style="width: 120px;margin-left: 20px">
@@ -54,7 +53,10 @@
         <el-col :span="6">
           <div class="layui-btn-group">
             <button type="button" class="layui-btn" @click="normalSearchUser()">搜索</button>
-            <button type="button" class="layui-btn" @click="addUserDialog = true">添加</button>
+            <button type="button" class="layui-btn" @click="addUserDialog = true"
+                    v-for="item in activeMenu"
+                    :key="item.menuId+''"
+                    v-if="item.menuCode=='user_add_button'">添加</button>
             <button type="button" class="layui-btn">导出</button>
           </div>
         </el-col>
@@ -133,16 +135,28 @@
           width="250%">
           <template slot-scope="scope">
             <button type="button" class="layui-btn layui-btn-xs layui-btn-radius layui-btn-primary"
-                    @click="updateUserDialogOpen(scope.row)">编辑
+                    @click="updateUserDialogOpen(scope.row)"
+                    v-for="item in activeMenu"
+                    :key="item.menuId+''"
+                    v-if="item.menuCode=='auth_user_update'">编辑
             </button>
             <button type="button" class="layui-btn layui-btn-xs layui-btn-radius layui-btn-danger"
-                    @click="deleteUser(scope.row)">删除
+                    @click="deleteUser(scope.row)"
+                    v-for="item in activeMenu"
+                    :key="item.menuId+''"
+                    v-if="item.menuCode=='user_delete'">删除
             </button>
             <button type="button" class="layui-btn layui-btn-xs layui-btn-radius layui-btn-normal"
-                    @click="roleUpdate(scope.row.username)">角色配置
+                    @click="roleUpdate(scope.row.username)"
+                    v-for="item in activeMenu"
+                    :key="item.menuId+''"
+                    v-if="item.menuCode=='user_role_configure'">角色配置
             </button>
             <button type="button" class="layui-btn layui-btn-xs layui-btn-radius layui-btn-warm"
-                    @click="updatePwd(scope.row.username)">密码重置
+                    @click="updatePwd(scope.row.username)"
+                    v-for="item in activeMenu"
+                    :key="item.menuId+''"
+                    v-if="item.menuCode=='user_reset_pwd'">密码重置
             </button>
           </template>
         </el-table-column>
@@ -206,17 +220,15 @@
           </el-radio-group>
         </el-form-item>
         <el-form-item label="职 位: ">
-          <el-select v-model="deptSelect"
-                     placeholder="请选择部门"
-                     style="width: 120px"
-                     @change="deptSelectChange">
-            <el-option
-              v-for="item in deptList"
-              :key="item.deptId+''"
-              :label="item.deptName"
-              :value="item.deptId">
-            </el-option>
-          </el-select>
+          <el-cascader
+            :options="deptTree"
+            :clearable="true"
+            :props="{ checkStrictly: true ,value: 'deptId',label: 'deptName',expandTrigger: 'hover',emitPath: false}"
+            v-model="deptSelect"
+            placeholder="选择部门"
+            @change="deptSelectChange()"
+            clearable>
+          </el-cascader>
           <el-select v-model="selectPosition" placeholder="请选择职位" style="width: 120px;margin-left: 20px">
             <el-option
               v-for="item in positionList"
@@ -337,6 +349,7 @@
                         }
                     }]
                 },
+                activeMenu: [],
                 userList: [],
                 userTotal: 0,
                 currentPage: 0,
@@ -378,7 +391,7 @@
                 selectPosition: null,
                 updateUserDialog: false,
                 updateUserInfo: {},
-                deptList: [],
+                deptTree: [],
                 positionList: [],
                 updateUserInfoRules: {
                     realName: [
@@ -422,7 +435,8 @@
         },
         created() {
             this.getUserList(1, 10)
-            this.deptListInit()
+            this.initDeptTree(1,100)
+            this.initActiveMenu()
         },
         mounted() {
         },
@@ -444,11 +458,27 @@
                     this.pageSize = res.data.rows
                 }
             },
-            async deptListInit() {
-                const {data: res} = await this.$http.get('/dept/simples')
-                if (res.status === 200) {
-                    this.deptList = res.data
-                } else {
+            async initActiveMenu() {
+                const {data: res} = await this.$http.get('/menu/login_menu', {
+                    params: {
+                        menuId: 4,
+                        lowLevel: 3
+                    }
+                })
+                if(res.status === 200) {
+                    this.activeMenu = res.data.children
+                }
+            },
+            async initDeptTree(deptId,lowLevel) {
+                const {data: res} = await this.$http.get("/dept/simple_tree",{
+                    params: {
+                        deptId: deptId,
+                        lowLevel: lowLevel
+                    }
+                })
+                if(res.status === 200) {
+                    this.deptTree = res.data.children
+                }else {
                     console.log(res.statusName)
                 }
             },
@@ -598,6 +628,10 @@
             },
             async deptSelectChange() {
                 this.selectPosition = null
+                this.positionList = []
+                if(this.deptSelect == null || !/^\d+$/.test(this.deptSelect)) {
+                    return
+                }
                 const {data: res} = await this.$http.get('/position/depts?deptId=' + this.deptSelect)
                 if(res.status === 200) {
                     this.positionList = res.data

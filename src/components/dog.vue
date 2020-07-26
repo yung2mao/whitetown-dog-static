@@ -41,7 +41,7 @@
                @click="closeAndOpen()"
                :style="isCollapse ? 'padding-right: 23px;' : 'padding-right: 14px;'"></i>
           </div>
-          <el-submenu :index="item.menuId+''" v-for="item in menuList">
+          <el-submenu :index="item.menuId+''" v-for="item in menuList" :key="item.menuId+''">
             <template slot="title">
               <i :class="'layui-icon '+item.menuIcon" style="color: rgba(206,209,245,0.84);padding-right: 20px"></i>
               <span>{{item.menuName}}</span>
@@ -76,7 +76,7 @@
             }
         },
         created() {
-            this.getMenuList()
+            this.getMenuList(1,100)
             this.activePath = window.sessionStorage.getItem('activePath')
             this.getLoginUser()
         },
@@ -98,8 +98,13 @@
                 }
             },
             //获取菜单列表
-            async getMenuList() {
-                const {data: res} = await this.$http.get('menu/login_menu')
+            async getMenuList(menuId,lowLevel) {
+                const {data: res} = await this.$http.get('menu/login_menu',{
+                    params: {
+                        menuId: menuId,
+                        lowLevel: lowLevel
+                    }
+                })
                 if (res.status != 200) {
 
                     layer.msg(res.statusName, {
