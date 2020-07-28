@@ -54,14 +54,15 @@
         <el-table-column
           prop="menuIcon"
           label="菜单图标"
-          width="150">
+          width="120">
           <template slot-scope="scope">
             <i :class="'layui-icon '+scope.row.menuIcon"></i>
           </template>
         </el-table-column>
         <el-table-column
           prop="description"
-          label="菜单描述">
+          label="菜单描述"
+          width="200">
         </el-table-column>
         <el-table-column
           prop="menuSort"
@@ -87,7 +88,8 @@
           width="180">
         </el-table-column>
         <el-table-column
-          label="操作">
+          label="操作"
+          width="140">
           <template slot-scope="scope">
             <button type="button" class="layui-btn layui-btn-xs layui-btn-radius layui-btn-primary"
                     @click="updateMenuDialogOpen(scope.row)">编辑

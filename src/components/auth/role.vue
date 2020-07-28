@@ -92,13 +92,22 @@
           width="300">
           <template slot-scope="scope">
             <button type="button" class="layui-btn layui-btn-xs layui-btn-radius layui-btn-primary"
-                    @click="updateRoleDialogOpen(scope.row)">编辑
+                    @click="updateRoleDialogOpen(scope.row)"
+                    v-for="item in activeMenu"
+                    :key="item.menuId+''"
+                    v-if="item.menuCode=='auth_role_update'">编辑
             </button>
             <button type="button" class="layui-btn layui-btn-xs layui-btn-radius layui-btn-danger"
-                    @click="deleteRole(scope.row)">删除
+                    @click="deleteRole(scope.row)"
+                    v-for="item in activeMenu"
+                    :key="item.menuId+''"
+                    v-if="item.menuCode=='auth_role_del'">删除
             </button>
             <button type="button" class="layui-btn layui-btn-xs layui-btn-radius layui-btn-warm"
-                    @click="roleMenuDialogOpen(scope.row)">菜单配置
+                    @click="roleMenuDialogOpen(scope.row)"
+                    v-for="item in activeMenu"
+                    :key="item.menuId+''"
+                    v-if="item.menuCode=='role_menus_configure'">菜单配置
             </button>
             <button type="button" class="layui-btn layui-btn-xs layui-btn-radius layui-btn-normal"
                     @click="searchUserByRoleId(scope.row)">查看用户
