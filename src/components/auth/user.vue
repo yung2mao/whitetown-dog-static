@@ -57,7 +57,7 @@
                     v-for="item in activeMenu"
                     :key="item.menuId+''"
                     v-if="item.menuCode=='user_add_button'">添加</button>
-            <button type="button" class="layui-btn">导出</button>
+            <button type="button" class="layui-btn" @click="downloadUser()">导出</button>
           </div>
         </el-col>
       </el-row>
@@ -299,6 +299,8 @@
 </template>
 
 <script>
+    import WhiteUtils from "../../utils/whiteTools";
+
     export default {
         name: 'user',
         data() {
@@ -521,6 +523,39 @@
                         time: 1000
                     })
                 }
+            },
+            //数据导出
+            downloadUser() {
+                if (this.timeScope == null) {
+                    this.timeScope = []
+                }
+                if(this.userTotal > 5000) {
+                    layer.msg("数据量过大,请重新选择搜索条件", {
+                        offset: '15px',
+                        icon: 5,
+                        time: 1000
+                    })
+                }
+                this.$http.get('/user/downloads', {
+                    params: {
+                        searchDetail: this.searchDetail,
+                        deptId: this.pageDeptId,
+                        positionId: this.pagePositionId,
+                        startTime: this.timeScope[0],
+                        endTime: this.timeScope[1]
+                    },
+                    responseType: 'blob'
+                }).then((res) => {
+                    const link = document.createElement('a')
+                    let blob = new Blob([res.data], {type: 'application/vnd.ms-excel'})
+                    link.style.display = 'none'
+                    link.href = URL.createObjectURL(blob)
+                    let fileName = "user_" + this.$utils.toDateString(new Date(),"yyyy-MM-dd") + ".xlsx"
+                    link.download = fileName
+                    document.body.appendChild(link)
+                    link.click()
+                    document.body.removeChild(link)
+                })
             },
             //用户状态变更
             async userStatusUpdate(row) {

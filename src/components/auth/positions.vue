@@ -40,8 +40,11 @@
         <el-col :span="6">
           <div class="layui-btn-group">
             <button type="button" class="layui-btn" @click="searchPosition()">搜索</button>
-            <button type="button" class="layui-btn" @click="addPositionDialog = true">添加</button>
-            <button type="button" class="layui-btn">导出</button>
+            <button type="button" class="layui-btn" @click="addPositionDialog = true"
+                    v-for="item in activeMenu"
+                    :key="item.menuId+''"
+                    v-if="item.menuCode=='position_add_button'">添加</button>
+            <button type="button" class="layui-btn" @click="downloadPosition()">导出</button>
           </div>
         </el-col>
       </el-row>
@@ -92,10 +95,16 @@
           width="150%">
           <template slot-scope="scope">
             <button type="button" class="layui-btn layui-btn-xs layui-btn-radius layui-btn-primary"
-                    @click="updatePositionDialogOpen(scope.row)">编辑
+                    @click="updatePositionDialogOpen(scope.row)"
+                    v-for="item in activeMenu"
+                    :key="item.menuId+''"
+                    v-if="item.menuCode=='position_update_button'">编辑
             </button>
             <button type="button" class="layui-btn layui-btn-xs layui-btn-radius layui-btn-danger"
-                    @click="deletePosition(scope.row)">删除
+                    @click="deletePosition(scope.row)"
+                    v-for="item in activeMenu"
+                    :key="item.menuId+''"
+                    v-if="item.menuCode=='position_del_button'">删除
             </button>
           </template>
         </el-table-column>
@@ -231,6 +240,7 @@
                 }
             }
             return {
+                activeMenu: [],
                 positionList: [],
                 currentPage: 0,
                 pageSize: 0,
@@ -317,8 +327,20 @@
         created() {
             this.initPositionList(1,10)
             this.initDeptTree(1,100)
+            this.initActiveMenu()
         },
         methods: {
+            async initActiveMenu() {
+                const {data: res} = await this.$http.get('/menu/login_menu', {
+                    params: {
+                        menuId: 20,
+                        lowLevel: 3
+                    }
+                })
+                if(res.status === 200) {
+                    this.activeMenu = res.data.children
+                }
+            },
             async initPositionList (page,size) {
                 const {data: res} = await this.$http.get('/position/page',{
                     params: {
@@ -372,6 +394,30 @@
                         time: 1000
                     })
                 }
+            },
+            downloadPosition() {
+                if(this.searchPositionInfo.timeScope==null){
+                    this.searchPositionInfo.timeScope = []
+                }
+                this.$http.get('/position/downloads', {
+                    params: {
+                        deptId: this.searchPositionInfo.searchDeptId,
+                        positionName: this.searchPositionInfo.searchPositionName,
+                        startTime: this.searchPositionInfo.timeScope[0],
+                        endTime: this.searchPositionInfo.timeScope[1]
+                    },
+                    responseType: 'blob'
+                }).then((res) => {
+                    const link = document.createElement('a')
+                    let blob = new Blob([res.data], {type: 'application/vnd.ms-excel'})
+                    link.style.display = 'none'
+                    link.href = URL.createObjectURL(blob)
+                    let fileName = "position_" + this.$utils.toDateString(new Date(),"yyyy-MM-dd") + ".xlsx"
+                    link.download = fileName
+                    document.body.appendChild(link)
+                    link.click()
+                    document.body.removeChild(link)
+                })
             },
             addPositionDialogClose() {
                 this.$refs.addPositionRef.resetFields()

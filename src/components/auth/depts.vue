@@ -5,7 +5,10 @@
         <el-breadcrumb-item>权限管理</el-breadcrumb-item>
         <el-breadcrumb-item>部门管理</el-breadcrumb-item>
       </el-breadcrumb>
-      <el-card>
+      <el-card
+        v-for="item in activeMenu"
+        :key="item.menuId+''"
+        v-if="item.menuCode=='dept_query'">
         <el-row :gutter="15">
           <el-col :span="4">
             <el-cascader
@@ -20,7 +23,10 @@
           <el-col :span="6">
             <div class="layui-btn-group">
               <button type="button" class="layui-btn" @click="searchDeptTree()">搜索</button>
-              <button type="button" class="layui-btn" @click="addDeptDialog = true">添加</button>
+              <button type="button" class="layui-btn" @click="addDeptDialog = true"
+                      v-for="item in activeMenu"
+                      :key="item.menuId+''"
+                      v-if="item.menuCode=='dept_add_button'">添加</button>
               <button type="button" class="layui-btn">导出</button>
             </div>
           </el-col>
@@ -98,13 +104,22 @@
             width="250">
             <template slot-scope="scope">
               <button type="button" class="layui-btn layui-btn-xs layui-btn-radius layui-btn-primary"
-                      @click="updateDeptDialogOpen(scope.row)">编辑
+                      @click="updateDeptDialogOpen(scope.row)"
+                      v-for="item in activeMenu"
+                      :key="item.menuId+''"
+                      v-if="item.menuCode=='dept_update_button'">编辑
               </button>
               <button type="button" class="layui-btn layui-btn-xs layui-btn-radius layui-btn-warm"
-                      @click="configureBossDialogOpen(scope.row)">指定负责人
+                      @click="configureBossDialogOpen(scope.row)"
+                      v-for="item in activeMenu"
+                      :key="item.menuId+''"
+                      v-if="item.menuCode=='dept_boss_button'">指定负责人
               </button>
               <button type="button" class="layui-btn layui-btn-xs layui-btn-radius layui-btn-danger"
-                      @click="deleteDept(scope.row)">删除
+                      @click="deleteDept(scope.row)"
+                      v-for="item in activeMenu"
+                      :key="item.menuId+''"
+                      v-if="item.menuCode=='dept_del_button'">删除
               </button>
             </template>
           </el-table-column>
@@ -282,6 +297,7 @@
                 }
             }
             return {
+                activeMenu: [],
                 deptList: [],
                 deptTree: [],
                 searchDeptId: null,
@@ -339,8 +355,20 @@
         created() {
             this.initDeptList()
             this.initDeptTree(1,100)
+            this.initActiveMenu()
         },
         methods: {
+            async initActiveMenu() {
+                const {data: res} = await this.$http.get('/menu/login_menu', {
+                    params: {
+                        menuId: 7,
+                        lowLevel: 3
+                    }
+                })
+                if(res.status === 200) {
+                    this.activeMenu = res.data.children
+                }
+            },
             async initDeptList() {
                 const {data: res} = await this.$http.get('/dept/tree',{
                     params: {

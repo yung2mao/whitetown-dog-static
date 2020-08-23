@@ -5,7 +5,10 @@
       <el-breadcrumb-item>权限管理</el-breadcrumb-item>
       <el-breadcrumb-item>菜单管理</el-breadcrumb-item>
     </el-breadcrumb>
-    <el-card>
+    <el-card
+      v-for="item in activeMenu"
+      :key="item.menuId+''"
+      v-if="item.menuCode=='menus_query'">
       <el-row :gutter="15">
         <el-col :span="5">
           <el-input
@@ -17,7 +20,10 @@
         <el-col :span="6">
           <div class="layui-btn-group">
             <button type="button" class="layui-btn" @click="searchMenu()">搜索</button>
-            <button type="button" class="layui-btn" @click="addMenuDialogOpen()">添加</button>
+            <button type="button" class="layui-btn" @click="addMenuDialogOpen()"
+                    v-for="item in activeMenu"
+                    :key="item.menuId+''"
+                    v-if="item.menuCode=='menus_add_button'">添加</button>
             <button type="button" class="layui-btn">导出</button>
           </div>
         </el-col>
@@ -92,10 +98,16 @@
           width="140">
           <template slot-scope="scope">
             <button type="button" class="layui-btn layui-btn-xs layui-btn-radius layui-btn-primary"
-                    @click="updateMenuDialogOpen(scope.row)">编辑
+                    @click="updateMenuDialogOpen(scope.row)"
+                    v-for="item in activeMenu"
+                    :key="item.menuId+''"
+                    v-if="item.menuCode=='menus_update_button'">编辑
             </button>
             <button type="button" class="layui-btn layui-btn-xs layui-btn-radius layui-btn-danger"
-                    @click="delMenu(scope.row)">删除
+                    @click="delMenu(scope.row)"
+                    v-for="item in activeMenu"
+                    :key="item.menuId+''"
+                    v-if="item.menuCode=='menus_del_button'">删除
             </button>
           </template>
         </el-table-column>
@@ -219,6 +231,7 @@
                 }
             }
             return {
+                activeMenu: [],
                 roleName: '',
                 menuList: [],
                 selectMenuList: [],
@@ -283,8 +296,20 @@
         },
         created() {
             this.initMenuList()
+            this.initActiveMenu()
         },
         methods: {
+            async initActiveMenu() {
+                const {data: res} = await this.$http.get('/menu/login_menu', {
+                    params: {
+                        menuId: 6,
+                        lowLevel: 3
+                    }
+                })
+                if(res.status === 200) {
+                    this.activeMenu = res.data.children
+                }
+            },
             async initMenuList() {
                 this.menuList = []
                 const {data: res} = await this.$http.get('/menu/tree', {

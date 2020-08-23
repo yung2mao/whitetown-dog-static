@@ -4,6 +4,8 @@ import router from './router'
 import './assets/css/global.css'
 import './plugins/element.js'
 import axios from 'axios'
+import VEUtils from 'xe-utils'
+import VXEUtils from "vxe-utils"
 
 Vue.prototype.$http = axios
 axios.defaults.baseURL = 'http://127.0.0.1:10003/'
@@ -16,7 +18,7 @@ axios.interceptors.request.use(config=>{
   return config
 })
 Vue.config.productionTip = false
-
+Vue.use(VXEUtils,VEUtils,{mounts: ['cookie']})
 new Vue({
   router,
   render: h => h(App)

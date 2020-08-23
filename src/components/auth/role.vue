@@ -5,7 +5,10 @@
       <el-breadcrumb-item>权限管理</el-breadcrumb-item>
       <el-breadcrumb-item>角色管理</el-breadcrumb-item>
     </el-breadcrumb>
-    <el-card>
+    <el-card
+      v-for="item in activeMenu"
+      :key="item.menuId+''"
+      v-if="item.menuCode=='roles_query'">
       <el-row :gutter="15">
         <el-col :span="5">
           <el-input
@@ -35,7 +38,7 @@
                     v-for="item in activeMenu"
                     :key="item.menuId+''"
                     v-if="item.menuCode=='role_add_button'">添加</button>
-            <button type="button" class="layui-btn">导出</button>
+            <button type="button" class="layui-btn" @click="downloadRole()">导出</button>
           </div>
         </el-col>
       </el-row>
@@ -501,6 +504,29 @@
                 } else {
                     return
                 }
+            },
+            downloadRole() {
+                if (this.timeScope == null) {
+                    this.timeScope = []
+                }
+                this.$http.get('/role/downloads', {
+                    params: {
+                        detail: this.roleName,
+                        startTime: this.timeScope[0],
+                        endTime: this.timeScope[1]
+                    },
+                    responseType: 'blob'
+                }).then((res) => {
+                    const link = document.createElement('a')
+                    let blob = new Blob([res.data], {type: 'application/vnd.ms-excel'})
+                    link.style.display = 'none'
+                    link.href = URL.createObjectURL(blob)
+                    let fileName = "role_" + this.$utils.toDateString(new Date(),"yyyy-MM-dd") + ".xlsx"
+                    link.download = fileName
+                    document.body.appendChild(link)
+                    link.click()
+                    document.body.removeChild(link)
+                })
             },
             //菜单绑定相关
             async roleMenuDialogOpen(row) {
