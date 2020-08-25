@@ -7,12 +7,34 @@
     </el-breadcrumb>
     <el-card>
       <el-row :gutter="15">
-        <el-col :span="5">
+        <el-col :span="4">
           <el-input
             placeholder="请输入用户名/手机号"
             prefix-icon="el-icon-search"
             v-model="searchDetail">
           </el-input>
+        </el-col>
+        <el-col :span="5">
+          <el-cascader
+            :options="deptTree"
+            :clearable="true"
+            :props="{ checkStrictly: true ,value: 'deptId',label: 'deptName',expandTrigger: 'hover',emitPath: false}"
+            v-model="pageDeptId"
+            placeholder="选择部门"
+            @change="pageDeptChange()"
+            style="width: 120px"
+            clearable>
+          </el-cascader>
+          <el-select v-model="pagePositionId"
+                     placeholder="选择职位"
+                     style="width: 120px;margin-left: 20px">
+            <el-option
+              v-for="item in pagePositionList"
+              :key="item.positionId+''"
+              :label="item.positionName"
+              :value="item.positionId">
+            </el-option>
+          </el-select>
         </el-col>
         <el-col :span="5">
           <el-date-picker
@@ -31,8 +53,11 @@
         <el-col :span="6">
           <div class="layui-btn-group">
             <button type="button" class="layui-btn" @click="normalSearchUser()">搜索</button>
-            <button type="button" class="layui-btn" @click="addUserDialog = true">添加</button>
-            <button type="button" class="layui-btn">导出</button>
+            <button type="button" class="layui-btn" @click="addUserDialog = true"
+                    v-for="item in activeMenu"
+                    :key="item.menuId+''"
+                    v-if="item.menuCode=='user_add_button'">添加</button>
+            <button type="button" class="layui-btn" @click="downloadUser()">导出</button>
           </div>
         </el-col>
       </el-row>
@@ -40,7 +65,7 @@
       <el-table
         :data="userList"
         border
-        style="width: 95%"
+        style="width: 100%"
         empty-text="当前项没有数据"
         :header-cell-style="{background: '#eef1f6',color:'#606266',textAlign: 'center'}"
         :cell-style="{textAlign: 'center'}">
@@ -110,16 +135,28 @@
           width="250%">
           <template slot-scope="scope">
             <button type="button" class="layui-btn layui-btn-xs layui-btn-radius layui-btn-primary"
-                    @click="updateUserDialogOpen(scope.row)">编辑
+                    @click="updateUserDialogOpen(scope.row)"
+                    v-for="item in activeMenu"
+                    :key="item.menuId+''"
+                    v-if="item.menuCode=='auth_user_update'">编辑
             </button>
             <button type="button" class="layui-btn layui-btn-xs layui-btn-radius layui-btn-danger"
-                    @click="deleteUser(scope.row)">删除
+                    @click="deleteUser(scope.row)"
+                    v-for="item in activeMenu"
+                    :key="item.menuId+''"
+                    v-if="item.menuCode=='user_delete'">删除
             </button>
             <button type="button" class="layui-btn layui-btn-xs layui-btn-radius layui-btn-normal"
-                    @click="roleUpdate(scope.row.username)">角色配置
+                    @click="roleUpdate(scope.row.username)"
+                    v-for="item in activeMenu"
+                    :key="item.menuId+''"
+                    v-if="item.menuCode=='user_role_configure'">角色配置
             </button>
             <button type="button" class="layui-btn layui-btn-xs layui-btn-radius layui-btn-warm"
-                    @click="updatePwd(scope.row.username)">密码重置
+                    @click="updatePwd(scope.row.username)"
+                    v-for="item in activeMenu"
+                    :key="item.menuId+''"
+                    v-if="item.menuCode=='user_reset_pwd'">密码重置
             </button>
           </template>
         </el-table-column>
@@ -183,17 +220,15 @@
           </el-radio-group>
         </el-form-item>
         <el-form-item label="职 位: ">
-          <el-select v-model="deptSelect"
-                     placeholder="请选择部门"
-                     style="width: 120px"
-                     @blur="deptSelectChange">
-            <el-option
-              v-for="item in deptList"
-              :key="item.deptId+''"
-              :label="item.deptName"
-              :value="item.deptId">
-            </el-option>
-          </el-select>
+          <el-cascader
+            :options="deptTree"
+            :clearable="true"
+            :props="{ checkStrictly: true ,value: 'deptId',label: 'deptName',expandTrigger: 'hover',emitPath: false}"
+            v-model="deptSelect"
+            placeholder="选择部门"
+            @change="deptSelectChange()"
+            clearable>
+          </el-cascader>
           <el-select v-model="selectPosition" placeholder="请选择职位" style="width: 120px;margin-left: 20px">
             <el-option
               v-for="item in positionList"
@@ -264,6 +299,8 @@
 </template>
 
 <script>
+    import WhiteUtils from "../../utils/whiteTools";
+
     export default {
         name: 'user',
         data() {
@@ -314,10 +351,14 @@
                         }
                     }]
                 },
+                activeMenu: [],
                 userList: [],
                 userTotal: 0,
                 currentPage: 0,
                 pageSize: 0,
+                pageDeptId: null,
+                pagePositionId: null,
+                pagePositionList: [],
                 addUserDialog: false,
                 addUserInfo: {},
                 addUserInfoRules: {
@@ -348,11 +389,11 @@
                         }
                     ]
                 },
-                deptSelect: '',
-                selectPosition: '',
+                deptSelect: null,
+                selectPosition: null,
                 updateUserDialog: false,
                 updateUserInfo: {},
-                deptList: [],
+                deptTree: [],
                 positionList: [],
                 updateUserInfoRules: {
                     realName: [
@@ -396,13 +437,15 @@
         },
         created() {
             this.getUserList(1, 10)
+            this.initDeptTree(1,100)
+            this.initActiveMenu()
         },
         mounted() {
         },
         methods: {
             //获取userList
             async getUserList(page, size) {
-                const {data: res} = await this.$http.get('/user/pageUser', {
+                const {data: res} = await this.$http.get('/user/page', {
                     params: {
                         page: page,
                         size: size
@@ -417,16 +460,53 @@
                     this.pageSize = res.data.rows
                 }
             },
+            async initActiveMenu() {
+                const {data: res} = await this.$http.get('/menu/login_menu', {
+                    params: {
+                        menuId: 4,
+                        lowLevel: 3
+                    }
+                })
+                if(res.status === 200) {
+                    this.activeMenu = res.data.children
+                }
+            },
+            async initDeptTree(deptId,lowLevel) {
+                const {data: res} = await this.$http.get("/dept/simple_tree",{
+                    params: {
+                        deptId: deptId,
+                        lowLevel: lowLevel
+                    }
+                })
+                if(res.status === 200) {
+                    this.deptTree = res.data.children
+                }else {
+                    console.log(res.statusName)
+                }
+            },
+            async pageDeptChange() {
+                this.pagePositionId = null
+                if (this.pageDeptId != null && this.pageDeptId > 1) {
+                    const {data: res} = await this.$http.get('/position/depts?deptId=' + this.pageDeptId)
+                    if (res.status === 200) {
+                        this.pagePositionList = res.data
+                    } else {
+                        console.log(res.statusName)
+                    }
+                }
+            },
             //普通搜索功能
             async normalSearchUser() {
                 if(this.timeScope==null){
                     this.timeScope = []
                 }
-                const {data: res} = await this.$http.get('/user/pageUser', {
+                const {data: res} = await this.$http.get('/user/page', {
                     params: {
                         page: 1,
                         rows: this.pageSize,
                         searchDetail: this.searchDetail,
+                        deptId: this.pageDeptId,
+                        positionId: this.pagePositionId,
                         startTime: this.timeScope[0],
                         endTime: this.timeScope[1]
                     }
@@ -444,6 +524,39 @@
                     })
                 }
             },
+            //数据导出
+            downloadUser() {
+                if (this.timeScope == null) {
+                    this.timeScope = []
+                }
+                if(this.userTotal > 5000) {
+                    layer.msg("数据量过大,请重新选择搜索条件", {
+                        offset: '15px',
+                        icon: 5,
+                        time: 1000
+                    })
+                }
+                this.$http.get('/user/downloads', {
+                    params: {
+                        searchDetail: this.searchDetail,
+                        deptId: this.pageDeptId,
+                        positionId: this.pagePositionId,
+                        startTime: this.timeScope[0],
+                        endTime: this.timeScope[1]
+                    },
+                    responseType: 'blob'
+                }).then((res) => {
+                    const link = document.createElement('a')
+                    let blob = new Blob([res.data], {type: 'application/vnd.ms-excel'})
+                    link.style.display = 'none'
+                    link.href = URL.createObjectURL(blob)
+                    let fileName = "user_" + this.$utils.toDateString(new Date(),"yyyy-MM-dd") + ".xlsx"
+                    link.download = fileName
+                    document.body.appendChild(link)
+                    link.click()
+                    document.body.removeChild(link)
+                })
+            },
             //用户状态变更
             async userStatusUpdate(row) {
                 let userStatus = row.userStatus
@@ -452,7 +565,7 @@
                 } else if (1 == userStatus) {
                     userStatus = 0
                 }
-                const {data: res} = await this.$http.get('/user/active', {
+                const {data: res} = await this.$http.get('/user/status', {
                     params: {
                         username: row.username,
                         userStatus: userStatus
@@ -477,7 +590,7 @@
                     btn: ['确认', '取消']
                     ,
                     yes: async function (index, layero) {
-                        const {data: res} = await that.$http.get('/user/active', {
+                        const {data: res} = await that.$http.get('/user/status', {
                             params: {
                                 username: row.username,
                                 userStatus: 2
@@ -537,17 +650,24 @@
             async updateUserDialogOpen(row) {
                 this.updateUserDialog = true
                 this.updateUserInfo = JSON.parse(JSON.stringify(row))
-                const {data: res} = await this.$http.get('/dept/allSimple')
-                if(res.status === 200){
-                    this.deptList = res.data
-                }else {
-                    console.log(res.statusName)
-                    this.updateUserDialog = false
-                }
                 this.deptSelect = this.updateUserInfo.deptId
+                if(this.deptSelect != null && this.deptSelect > 1) {
+                    const {data: res} = await this.$http.get('/position/depts?deptId='+this.deptSelect)
+                    if(res.status === 200) {
+                        this.positionList = res.data
+                        this.selectPosition = this.updateUserInfo.positionId
+                    }else {
+                        console.log(res.statusName)
+                    }
+                }
             },
             async deptSelectChange() {
-                const {data: res} = await this.$http.get('/position/deptPosition?deptId=' + this.deptSelect)
+                this.selectPosition = null
+                this.positionList = []
+                if(this.deptSelect == null || !/^\d+$/.test(this.deptSelect)) {
+                    return
+                }
+                const {data: res} = await this.$http.get('/position/depts?deptId=' + this.deptSelect)
                 if(res.status === 200) {
                     this.positionList = res.data
                 }else {
@@ -557,7 +677,6 @@
             //修改用户弹窗关闭时调用
             updateUserDialogReset() {
                 this.$refs.updateUserInfoRef.resetFields()
-                this.deptList = []
                 this.positionList = []
                 this.deptSelect = ''
                 this.selectPosition = ''
@@ -597,7 +716,7 @@
             async roleUpdate(username) {
                 this.roleConfigDialog = true
                 this.currentRoleUser = username
-                const {data: response} = await this.$http.get('/role/getAll')
+                const {data: response} = await this.$http.get('/role/get_all')
                 if(response.status === 200){
                     this.roleList = response.data
                 }else {
@@ -620,7 +739,7 @@
                 this.currentRoleUser = ''
             },
             async updateUserRole() {
-                const {data: res} = await this.$http.post('/role/configureRole', {
+                const {data: res} = await this.$http.post('/role/configure_role', {
                     username: this.currentRoleUser,
                     roleIds: this.checkedRoles
                 })
@@ -647,7 +766,7 @@
                     btn: ['确认', '取消']
                     ,
                     yes: async function (index, layero) {
-                        const {data: res} = await that.$http.get('/user/reSetPwd', {
+                        const {data: res} = await that.$http.get('/user/reset_pwd', {
                             params: {username: username}
                         })
                         layer.closeAll()
@@ -688,11 +807,6 @@
   .item {
     margin-bottom: 18px;
   }
-
-  .el-table {
-    margin-left: 25px;
-  }
-
   .clearfix:before,
   .clearfix:after {
     display: table;

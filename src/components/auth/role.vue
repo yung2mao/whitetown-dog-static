@@ -5,7 +5,10 @@
       <el-breadcrumb-item>权限管理</el-breadcrumb-item>
       <el-breadcrumb-item>角色管理</el-breadcrumb-item>
     </el-breadcrumb>
-    <el-card>
+    <el-card
+      v-for="item in activeMenu"
+      :key="item.menuId+''"
+      v-if="item.menuCode=='roles_query'">
       <el-row :gutter="15">
         <el-col :span="5">
           <el-input
@@ -31,8 +34,11 @@
         <el-col :span="6">
           <div class="layui-btn-group">
             <button type="button" class="layui-btn" @click="search()">搜索</button>
-            <button type="button" class="layui-btn" @click="addRoleDialog = true">添加</button>
-            <button type="button" class="layui-btn">导出</button>
+            <button type="button" class="layui-btn" @click="addRoleDialog = true"
+                    v-for="item in activeMenu"
+                    :key="item.menuId+''"
+                    v-if="item.menuCode=='role_add_button'">添加</button>
+            <button type="button" class="layui-btn" @click="downloadRole()">导出</button>
           </div>
         </el-col>
       </el-row>
@@ -89,13 +95,22 @@
           width="300">
           <template slot-scope="scope">
             <button type="button" class="layui-btn layui-btn-xs layui-btn-radius layui-btn-primary"
-                    @click="updateRoleDialogOpen(scope.row)">编辑
+                    @click="updateRoleDialogOpen(scope.row)"
+                    v-for="item in activeMenu"
+                    :key="item.menuId+''"
+                    v-if="item.menuCode=='auth_role_update'">编辑
             </button>
             <button type="button" class="layui-btn layui-btn-xs layui-btn-radius layui-btn-danger"
-                    @click="deleteRole(scope.row)">删除
+                    @click="deleteRole(scope.row)"
+                    v-for="item in activeMenu"
+                    :key="item.menuId+''"
+                    v-if="item.menuCode=='auth_role_del'">删除
             </button>
             <button type="button" class="layui-btn layui-btn-xs layui-btn-radius layui-btn-warm"
-                    @click="roleMenuDialogOpen(scope.row)">菜单配置
+                    @click="roleMenuDialogOpen(scope.row)"
+                    v-for="item in activeMenu"
+                    :key="item.menuId+''"
+                    v-if="item.menuCode=='role_menus_configure'">菜单配置
             </button>
             <button type="button" class="layui-btn layui-btn-xs layui-btn-radius layui-btn-normal"
                     @click="searchUserByRoleId(scope.row)">查看用户
@@ -228,6 +243,7 @@
             return {
                 roleName: '',
                 roleList: [],
+                activeMenu: [],
                 userList: [],
                 timeScope: [],
                 pickerOptions: {
@@ -336,17 +352,29 @@
         },
         created() {
             this.initRoleList()
+            this.initActiveMenu()
         },
         methods: {
             async initRoleList() {
-                const {data: res} = await this.$http.get('/role/getAll')
+                const {data: res} = await this.$http.get('/role/get_all')
                 if (res.status != 200) {
                     return console.log(res.statusName)
                 }
                 this.roleList = res.data
             },
+            async initActiveMenu() {
+                const {data: res} = await this.$http.get('/menu/login_menu', {
+                    params: {
+                        menuId: 5,
+                        lowLevel: 3
+                    }
+                })
+                if(res.status === 200) {
+                    this.activeMenu = res.data.children
+                }
+            },
             async searchUserByRoleId(row) {
-                const {data: res} = await this.$http.get('/user/roleUsers', {
+                const {data: res} = await this.$http.get('/user/role_users', {
                     params: {
                         roleId: row.roleId,
                         page: 1,
@@ -477,6 +505,29 @@
                     return
                 }
             },
+            downloadRole() {
+                if (this.timeScope == null) {
+                    this.timeScope = []
+                }
+                this.$http.get('/role/downloads', {
+                    params: {
+                        detail: this.roleName,
+                        startTime: this.timeScope[0],
+                        endTime: this.timeScope[1]
+                    },
+                    responseType: 'blob'
+                }).then((res) => {
+                    const link = document.createElement('a')
+                    let blob = new Blob([res.data], {type: 'application/vnd.ms-excel'})
+                    link.style.display = 'none'
+                    link.href = URL.createObjectURL(blob)
+                    let fileName = "role_" + this.$utils.toDateString(new Date(),"yyyy-MM-dd") + ".xlsx"
+                    link.download = fileName
+                    document.body.appendChild(link)
+                    link.click()
+                    document.body.removeChild(link)
+                })
+            },
             //菜单绑定相关
             async roleMenuDialogOpen(row) {
                 const {data: res} = await this.$http.get('/menu/tree', {
@@ -495,7 +546,7 @@
                 }
                 this.menuConfigDialog = true
                 this.menuNodeFlag = true
-                const {data: response} = await this.$http.get('/menu/roleMenuIds', {
+                const {data: response} = await this.$http.get('/menu/role_menuIds', {
                     params: {
                         roleId: row.roleId
                     }

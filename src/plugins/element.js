@@ -35,7 +35,8 @@ import {
   Collapse,
   CollapseItem,
   Tag,
-  Cascader
+  Cascader,
+  Autocomplete
 } from 'element-ui'
 
 Vue.use(Form)
@@ -72,4 +73,5 @@ Vue.use(Collapse)
 Vue.use(CollapseItem)
 Vue.use(Tag)
 Vue.use(Cascader)
+Vue.use(Autocomplete)
 Vue.prototype.$message = Message

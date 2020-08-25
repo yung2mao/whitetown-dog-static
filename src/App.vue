@@ -12,7 +12,7 @@ export default {
   async beforeCreate () {
     var token = window.localStorage.getItem('token')
     if (token) {
-      const {data:res} = await this.$http.get('/erus/newToken').catch(error=>{window.localStorage.clear()})
+      const {data:res} = await this.$http.get('/erus/new_token').catch(error=>{window.localStorage.clear()})
       if(res.status != 200){
         window.localStorage.clear()
         window.sessionStorage.clear()

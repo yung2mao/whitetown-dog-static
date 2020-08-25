@@ -5,7 +5,10 @@
       <el-breadcrumb-item>权限管理</el-breadcrumb-item>
       <el-breadcrumb-item>菜单管理</el-breadcrumb-item>
     </el-breadcrumb>
-    <el-card>
+    <el-card
+      v-for="item in activeMenu"
+      :key="item.menuId+''"
+      v-if="item.menuCode=='menus_query'">
       <el-row :gutter="15">
         <el-col :span="5">
           <el-input
@@ -17,7 +20,10 @@
         <el-col :span="6">
           <div class="layui-btn-group">
             <button type="button" class="layui-btn" @click="searchMenu()">搜索</button>
-            <button type="button" class="layui-btn" @click="addMenuDialogOpen()">添加</button>
+            <button type="button" class="layui-btn" @click="addMenuDialogOpen()"
+                    v-for="item in activeMenu"
+                    :key="item.menuId+''"
+                    v-if="item.menuCode=='menus_add_button'">添加</button>
             <button type="button" class="layui-btn">导出</button>
           </div>
         </el-col>
@@ -54,14 +60,15 @@
         <el-table-column
           prop="menuIcon"
           label="菜单图标"
-          width="150">
+          width="120">
           <template slot-scope="scope">
             <i :class="'layui-icon '+scope.row.menuIcon"></i>
           </template>
         </el-table-column>
         <el-table-column
           prop="description"
-          label="菜单描述">
+          label="菜单描述"
+          width="200">
         </el-table-column>
         <el-table-column
           prop="menuSort"
@@ -87,13 +94,20 @@
           width="180">
         </el-table-column>
         <el-table-column
-          label="操作">
+          label="操作"
+          width="140">
           <template slot-scope="scope">
             <button type="button" class="layui-btn layui-btn-xs layui-btn-radius layui-btn-primary"
-                    @click="updateMenuDialogOpen(scope.row)">编辑
+                    @click="updateMenuDialogOpen(scope.row)"
+                    v-for="item in activeMenu"
+                    :key="item.menuId+''"
+                    v-if="item.menuCode=='menus_update_button'">编辑
             </button>
             <button type="button" class="layui-btn layui-btn-xs layui-btn-radius layui-btn-danger"
-                    @click="delMenu(scope.row)">删除
+                    @click="delMenu(scope.row)"
+                    v-for="item in activeMenu"
+                    :key="item.menuId+''"
+                    v-if="item.menuCode=='menus_del_button'">删除
             </button>
           </template>
         </el-table-column>
@@ -125,7 +139,7 @@
             :options="selectMenuList"
             v-model="addMenuInfo.parentId"
             style="width: 260px"
-            :props="{ checkStrictly: true, value: 'menuId',label: 'menuName'}"
+            :props="{ checkStrictly: true, value: 'menuId',label: 'menuName',expandTrigger: 'hover',emitPath: false}"
             clearable></el-cascader>
         </el-form-item>
         <el-form-item label="路由地址: ">
@@ -210,13 +224,14 @@
         data() {
             var checkSort = (rules, value, cb) => {
                 const regex = /^[1-9][0-9]*$/
-                if (regex.test(value)) {
+                if (value == null || "" ==value || regex.test(value)) {
                     return cb()
                 } else {
                     cb(new Error('请输入数字'))
                 }
             }
             return {
+                activeMenu: [],
                 roleName: '',
                 menuList: [],
                 selectMenuList: [],
@@ -281,8 +296,20 @@
         },
         created() {
             this.initMenuList()
+            this.initActiveMenu()
         },
         methods: {
+            async initActiveMenu() {
+                const {data: res} = await this.$http.get('/menu/login_menu', {
+                    params: {
+                        menuId: 6,
+                        lowLevel: 3
+                    }
+                })
+                if(res.status === 200) {
+                    this.activeMenu = res.data.children
+                }
+            },
             async initMenuList() {
                 this.menuList = []
                 const {data: res} = await this.$http.get('/menu/tree', {
@@ -292,7 +319,7 @@
                     }
                 })
                 if (res.status === 200) {
-                    this.menuList.push(res.data)
+                    this.menuList = res.data.children
                 } else {
                     console.log(res.statusName)
                 }
@@ -310,7 +337,6 @@
                 }
             },
             async addMenuDialogOpen() {
-                this.addMenuDialog = true
                 const {data: res} = await this.$http.get('/menu/tree', {
                     params: {
                         menuId: 1,
@@ -318,16 +344,16 @@
                     }
                 })
                 if(res.status === 200){
+                    this.selectMenuList = []
                     this.selectMenuList.push(res.data)
                 }
+                this.addMenuDialog = true
             },
             addMenuDialogClose() {
                 this.$refs.addMenuRef.resetFields()
-                this.selectMenuList = []
+                this.addMenuInfo = {}
             },
             addMenu() {
-                let checkedParent = this.addMenuInfo.parentId
-                this.addMenuInfo.parentId = checkedParent.pop()
                 this.$refs.addMenuRef.validate(valid => {
                     if(!valid){
                         return
@@ -369,7 +395,6 @@
             },
             updateMenuDialogClose() {
                 this.$refs.updateMenuRef.resetFields()
-                this.selectMenuList = []
             },
             updateMenu() {
                 this.$refs.updateMenuRef.validate(valid => {
