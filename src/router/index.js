@@ -8,6 +8,7 @@ import role from '../components/auth/role'
 import menus from '../components/auth/menus'
 import depts from '../components/auth/depts'
 import positions from "../components/auth/positions"
+import sysMonitor from "../components/mainPage/sysMonitor";
 
 Vue.use(VueRouter)
 const originalPush = VueRouter.prototype.push
@@ -51,6 +52,10 @@ const routes = [
       {
         path: '/dog/auth/posi',
         component: positions
+      },
+      {
+        path: '/dog/sys/monitor',
+        component: sysMonitor
       }]
   }
 ]
