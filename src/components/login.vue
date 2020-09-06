@@ -3,7 +3,7 @@
     <div class="login_box">
       <div class="login_title">
         <h2 class="title_text" style="font-family: KaiTi SimSun;">White Town</h2>
-        <p style="color: #808080">GrainRain出品-模块化后台管理开发平台</p>
+        <p style="color: #808080">GrainRain出品 - 后台组件化演示平台</p>
       </div>
       <div class="form_box layui-form">
         <div class="layui-form-item">

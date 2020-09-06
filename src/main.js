@@ -5,7 +5,7 @@ import './assets/css/global.css'
 import './plugins/element.js'
 import axios from 'axios'
 import VEUtils from 'xe-utils'
-import VXEUtils from "vxe-utils"
+import VXEUtils from 'vxe-utils'
 
 Vue.prototype.$http = axios
 axios.defaults.baseURL = 'http://127.0.0.1:10003/'
